@@ -1304,7 +1304,7 @@ function showRegionDashboard(region) {
     var changeSign = d.s25 >= d.s24 ? '+' : '';
 
     html += '<div class="rd-card" style="border-left:3px solid ' + bc + ';min-width:150px;cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
-      '<div class="rd-brand" style="color:' + bc + ';">' + b + ' <span style="font-size:9px;color:var(--text-dim);">▼</span></div>' +
+      '<div class="rd-brand" style="color:' + bc + ';">' + b + ' <span style="font-size:9px;color:#fff;">▼</span></div>' +
       '<div class="rd-count">' + d.count + '<span style="font-size:11px;font-weight:400;color:var(--text-muted);">개</span></div>' +
       '<div class="rd-sales" style="font-weight:600;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
       '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">\'24 ' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</div>' +
