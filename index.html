@@ -14,6 +14,7 @@
 <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=625310b264d6d44999e623855ae46f03&libraries=services&autoload=false"></script>
 <script src="competitors_data.js"></script>
 <script src="sales_data.js"></script>
+<script src="population_data.js"></script>
 <style>
   :root {
     --bg: #0d0f14;
@@ -1278,7 +1279,46 @@ function showRegionDashboard(region) {
   var maxSales = Math.max.apply(null, brands.map(function(b) { return data[b].s25; }));
 
   var title = isAll ? '전국 브랜드 현황' : region + ' 지역 현황';
-  var html = '<div class="rd-header">' + title + '</div>';
+
+  // 인구통계 계산
+  var popTotal = 0, hhTotal = 0, areaTotal = 0;
+  if (typeof POPULATION_DATA !== 'undefined') {
+    if (isAll) {
+      Object.keys(POPULATION_DATA).forEach(function(r) {
+        popTotal += POPULATION_DATA[r].pop;
+        hhTotal += POPULATION_DATA[r].household;
+        areaTotal += POPULATION_DATA[r].area;
+      });
+    } else if (POPULATION_DATA[region]) {
+      popTotal = POPULATION_DATA[region].pop;
+      hhTotal = POPULATION_DATA[region].household;
+      areaTotal = POPULATION_DATA[region].area;
+    }
+  }
+  var popPerStore = totalStores > 0 && popTotal > 0 ? Math.round(popTotal / totalStores) : 0;
+  var hhPerStore = totalStores > 0 && hhTotal > 0 ? Math.round(hhTotal / totalStores) : 0;
+  var iloomCount = data['일룸'].count;
+  var popPerIloom = iloomCount > 0 && popTotal > 0 ? Math.round(popTotal / iloomCount) : 0;
+
+  var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">';
+  html += '<div class="rd-header" style="margin-bottom:0;">' + title + '</div>';
+
+  // 인구통계 요약 (오른쪽 정렬)
+  if (popTotal > 0) {
+    var formatPop = function(n) {
+      if (n >= 10000) return (n / 10000).toFixed(0) + '만';
+      return n.toLocaleString();
+    };
+    html += '<div style="display:flex;gap:16px;font-size:11px;color:var(--text-muted);">' +
+      '<div>인구 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popTotal) + '</strong></div>' +
+      '<div>세대 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(hhTotal) + '</strong></div>' +
+      '<div>면적 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + areaTotal.toLocaleString() + '</strong>km²</div>' +
+      '<div style="border-left:1px solid var(--border);padding-left:12px;">일룸 1점당 <strong style="color:var(--accent);font-family:DM Mono,monospace;">' + formatPop(popPerIloom) + '</strong>명</div>' +
+      '<div>전체 1점당 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popPerStore) + '</strong>명</div>' +
+    '</div>';
+  }
+  html += '</div>';
+
   html += '<div class="rd-grid">';
 
   // 전체 요약 카드
