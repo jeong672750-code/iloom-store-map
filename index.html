@@ -1151,6 +1151,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
 renderBrandFilters();
 renderRegionFilters();
 renderStoreList();
+showRegionDashboard('전체');
 
 // ══════════════════════════════════════════
 // 비교 모드
@@ -1247,41 +1248,63 @@ function runCompare() {
 // 지역 대시보드
 // ══════════════════════════════════════════
 function showRegionDashboard(region) {
-  if (region === '전체') { closeRegionDashboard(); return; }
+  var isAll = (region === '전체');
   var brands = ['일룸','한샘','리바트','까사미아','에몬스'];
   var data = {};
-  brands.forEach(function(b) { data[b] = { count: 0, sales: 0 }; });
+  brands.forEach(function(b) { data[b] = { count: 0, s24: 0, s25: 0 }; });
 
   allStores.forEach(function(s) {
-    if (s.region !== region) return;
+    if (!isAll && s.region !== region) return;
     if (!data[s.brand]) return;
     data[s.brand].count++;
     var sales = findSalesData(s.brand, s.name);
-    if (sales && sales.s25) data[s.brand].sales += sales.s25;
+    if (sales) {
+      if (sales.s25 > 0) data[s.brand].s25 += sales.s25;
+      if (sales.s24 > 0) data[s.brand].s24 += sales.s24;
+    }
   });
 
-  var totalStores = 0, totalSales = 0;
-  brands.forEach(function(b) { totalStores += data[b].count; totalSales += data[b].sales; });
-  var maxCount = Math.max.apply(null, brands.map(function(b) { return data[b].count; }));
+  var totalStores = 0, totalS24 = 0, totalS25 = 0;
+  brands.forEach(function(b) {
+    totalStores += data[b].count;
+    totalS24 += data[b].s24;
+    totalS25 += data[b].s25;
+  });
+  var maxSales = Math.max.apply(null, brands.map(function(b) { return data[b].s25; }));
 
-  var html = '<div class="rd-header">' + region + ' 지역 현황</div>';
+  var title = isAll ? '전국 브랜드 현황' : region + ' 지역 현황';
+  var html = '<div class="rd-header">' + title + '</div>';
   html += '<div class="rd-grid">';
 
-  // 요약 카드
-  html += '<div class="rd-card" style="border-color:var(--border);"><div class="rd-brand" style="color:var(--text-muted);">전체</div>' +
+  // 전체 요약 카드
+  var totalChange = totalS24 > 0 ? ((totalS25 - totalS24) / totalS24 * 100).toFixed(1) : 0;
+  var totalChangeClass = totalS25 >= totalS24 ? 'color:#34d399;' : 'color:#f87171;';
+  var totalChangeSign = totalS25 >= totalS24 ? '+' : '';
+  html += '<div class="rd-card" style="border-color:var(--border);min-width:150px;">' +
+    '<div class="rd-brand" style="color:var(--text-muted);">전체</div>' +
     '<div class="rd-count">' + totalStores + '<span style="font-size:11px;font-weight:400;color:var(--text-muted);">개</span></div>' +
-    '<div class="rd-sales">매출 ' + (totalSales > 0 ? formatSales(totalSales) : '-') + '</div></div>';
+    '<div class="rd-sales">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
+    '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">\'24 ' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</div>' +
+    (totalS24 > 0 ? '<div style="font-size:11px;font-weight:600;margin-top:4px;' + totalChangeClass + '">' + totalChangeSign + totalChange + '%</div>' : '') +
+    '</div>';
 
+  // 브랜드별 카드
   brands.forEach(function(b) {
     var d = data[b];
     var bc = BRAND_COLORS[b];
-    var pct = maxCount > 0 ? (d.count / maxCount * 100) : 0;
-    var share = totalStores > 0 ? (d.count / totalStores * 100).toFixed(0) : 0;
-    html += '<div class="rd-card" style="border-left:3px solid ' + bc + ';">' +
+    var salesPct = maxSales > 0 ? (d.s25 / maxSales * 100) : 0;
+    var share = totalS25 > 0 ? (d.s25 / totalS25 * 100).toFixed(1) : 0;
+    var change = d.s24 > 0 ? ((d.s25 - d.s24) / d.s24 * 100).toFixed(1) : 0;
+    var changeStyle = d.s25 >= d.s24 ? 'color:#34d399;' : 'color:#f87171;';
+    var changeSign = d.s25 >= d.s24 ? '+' : '';
+
+    html += '<div class="rd-card" style="border-left:3px solid ' + bc + ';min-width:150px;">' +
       '<div class="rd-brand" style="color:' + bc + ';">' + b + '</div>' +
       '<div class="rd-count">' + d.count + '<span style="font-size:11px;font-weight:400;color:var(--text-muted);">개</span></div>' +
-      '<div class="rd-sales">' + (d.sales > 0 ? formatSales(d.sales) : '매출 데이터 없음') + '</div>' +
-      '<div class="rd-bar-wrap"><div class="rd-bar" style="width:' + pct + '%;background:' + bc + ';"></div></div>' +
+      '<div class="rd-sales" style="font-weight:600;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
+      '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">\'24 ' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</div>' +
+      (d.s24 > 0 ? '<div style="font-size:11px;font-weight:600;margin-top:4px;' + changeStyle + '">' + changeSign + change + '% <span style="font-size:9px;color:var(--text-dim);">YoY</span></div>' : '') +
+      '<div class="rd-bar-wrap" style="margin-top:6px;"><div class="rd-bar" style="width:' + salesPct + '%;background:' + bc + ';"></div></div>' +
       '<div style="font-size:10px;color:var(--text-dim);margin-top:4px;">점유 ' + share + '%</div>' +
       '</div>';
   });
