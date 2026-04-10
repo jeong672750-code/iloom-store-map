@@ -274,26 +274,32 @@
   .legend-title { font-weight: 600; margin-bottom: 6px; color: var(--text); }
   .legend-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
   .legend-circle { border-radius: 50%; flex-shrink: 0; }
-  /* 지역 대시보드 */
+  /* 지역 대시보드 - 좌측 세로 패널 */
   .region-dashboard {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: var(--surface); border-top: 1px solid var(--border);
-    padding: 16px 24px; z-index: 999; display: none;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+    position: absolute; top: 0; left: 0; bottom: 0; width: 320px;
+    background: var(--surface); border-right: 1px solid var(--border);
+    padding: 16px 18px 16px 18px; z-index: 999; display: none;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+    overflow-y: auto;
   }
   .region-dashboard.visible { display: block; }
+  .region-dashboard::-webkit-scrollbar { width: 4px; }
+  .region-dashboard::-webkit-scrollbar-track { background: transparent; }
+  .region-dashboard::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .region-dashboard-close {
-    position: absolute; top: 8px; right: 12px; width: 24px; height: 24px;
+    position: absolute; top: 12px; right: 12px; width: 24px; height: 24px;
     border-radius: 50%; background: var(--surface2); border: 1px solid var(--border);
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     color: var(--text-muted); font-size: 13px;
   }
   .region-dashboard-close:hover { background: var(--border); }
-  .rd-header { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
-  .rd-grid { display: flex; gap: 12px; overflow-x: auto; }
+  .rd-header { font-size: 14px; font-weight: 700; margin-bottom: 4px; padding-right: 30px; }
+  .rd-pop-line { font-size: 11px; color: var(--text-muted); margin-bottom: 14px; padding-right: 30px; }
+  .rd-pop-line strong { color: var(--text); font-family: 'DM Mono', monospace; }
+  .rd-grid { display: flex; flex-direction: column; gap: 8px; }
   .rd-card {
-    flex: 0 0 auto; min-width: 130px; background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px; text-align: center;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; text-align: left;
   }
   .rd-brand { font-size: 11px; font-weight: 600; margin-bottom: 6px; }
   .rd-count { font-size: 22px; font-weight: 700; font-family: 'DM Mono', monospace; }
@@ -1299,30 +1305,29 @@ function showRegionDashboard(region) {
     return n.toLocaleString();
   };
 
-  var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">';
-  html += '<div class="rd-header" style="margin-bottom:0;">' + title + '</div>';
-
-  // 인구통계 요약 (오른쪽 정렬)
+  var html = '<div class="rd-header">' + title + '</div>';
   if (popTotal > 0) {
-    html += '<div style="display:flex;gap:16px;font-size:11px;color:var(--text-muted);">' +
-      '<div>인구 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popTotal) + '</strong>명</div>' +
-      '<div>세대 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(hhTotal) + '</strong></div>' +
-    '</div>';
+    html += '<div class="rd-pop-line">인구 <strong>' + formatPop(popTotal) + '명</strong> · 세대 <strong>' + formatPop(hhTotal) + '</strong></div>';
+  } else {
+    html += '<div style="margin-bottom:14px;"></div>';
   }
-  html += '</div>';
 
   html += '<div class="rd-grid">';
 
   // 전체 요약 카드
   var totalChange = totalS24 > 0 ? ((totalS25 - totalS24) / totalS24 * 100).toFixed(1) : 0;
-  var totalChangeClass = totalS25 >= totalS24 ? 'color:#34d399;' : 'color:#f87171;';
+  var totalChangeStyle = totalS25 >= totalS24 ? 'color:#34d399;' : 'color:#f87171;';
   var totalChangeSign = totalS25 >= totalS24 ? '+' : '';
-  html += '<div class="rd-card" style="border-color:var(--border);min-width:150px;">' +
-    '<div class="rd-brand" style="color:var(--text-muted);">전체</div>' +
-    '<div class="rd-count">' + totalStores + '<span style="font-size:11px;font-weight:400;color:var(--text-muted);">개</span></div>' +
-    '<div class="rd-sales">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
-    '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">\'24 ' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</div>' +
-    (totalS24 > 0 ? '<div style="font-size:11px;font-weight:600;margin-top:4px;' + totalChangeClass + '">' + totalChangeSign + totalChange + '%</div>' : '') +
+  html += '<div class="rd-card" style="border-color:var(--border);">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+      '<div style="font-size:11px;font-weight:600;color:var(--text-muted);">전체</div>' +
+      '<div style="font-size:18px;font-weight:700;font-family:DM Mono,monospace;">' + totalStores + '<span style="font-size:10px;font-weight:400;color:var(--text-muted);">개</span></div>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">' +
+      '<div style="font-size:10px;color:var(--text-dim);">\'24 ' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</div>' +
+      '<div style="font-size:12px;font-weight:600;">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
+    '</div>' +
+    (totalS24 > 0 ? '<div style="text-align:right;font-size:10px;font-weight:600;margin-top:2px;' + totalChangeStyle + '">' + totalChangeSign + totalChange + '% YoY</div>' : '') +
     '</div>';
 
   // 브랜드별 카드 (클릭 시 매장별 상세)
@@ -1334,21 +1339,29 @@ function showRegionDashboard(region) {
     var change = d.s24 > 0 ? ((d.s25 - d.s24) / d.s24 * 100).toFixed(1) : 0;
     var changeStyle = d.s25 >= d.s24 ? 'color:#34d399;' : 'color:#f87171;';
     var changeSign = d.s25 >= d.s24 ? '+' : '';
-    // 매장 1개 당 인구
     var popPerStore = d.count > 0 && popTotal > 0 ? Math.round(popTotal / d.count) : 0;
-    // 세대당 매출 (원)
     var salesPerHh = d.count > 0 && d.s25 > 0 && hhTotal > 0 ? Math.round(d.s25 / hhTotal) : 0;
 
-    html += '<div class="rd-card" style="border-left:3px solid ' + bc + ';min-width:160px;cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
-      '<div class="rd-brand" style="color:' + bc + ';">' + b + ' <span style="font-size:9px;color:#fff;">▼</span></div>' +
-      '<div class="rd-count">' + d.count + '<span style="font-size:11px;font-weight:400;color:var(--text-muted);">개</span></div>' +
-      '<div class="rd-sales" style="font-weight:600;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
-      '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">\'24 ' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</div>' +
-      (d.s24 > 0 ? '<div style="font-size:11px;font-weight:600;margin-top:4px;' + changeStyle + '">' + changeSign + change + '% <span style="font-size:9px;color:var(--text-dim);">YoY</span></div>' : '') +
+    html += '<div class="rd-card" style="border-left:3px solid ' + bc + ';cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
+      // 헤더: 브랜드명 + 매장수
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<div style="font-size:12px;font-weight:700;color:' + bc + ';">' + b + ' <span style="font-size:9px;color:#fff;">▼</span></div>' +
+        '<div style="font-size:18px;font-weight:700;font-family:DM Mono,monospace;">' + d.count + '<span style="font-size:10px;font-weight:400;color:var(--text-muted);">개</span></div>' +
+      '</div>' +
+      // 매출
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">' +
+        '<div style="font-size:10px;color:var(--text-dim);">\'24 ' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</div>' +
+        '<div style="font-size:12px;font-weight:600;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
+      '</div>' +
+      (d.s24 > 0 ? '<div style="text-align:right;font-size:10px;font-weight:600;margin-top:2px;' + changeStyle + '">' + changeSign + change + '% YoY</div>' : '') +
+      // 점유율 바
       '<div class="rd-bar-wrap" style="margin-top:6px;"><div class="rd-bar" style="width:' + salesPct + '%;background:' + bc + ';"></div></div>' +
-      '<div style="font-size:10px;color:var(--text-dim);margin-top:4px;">점유 ' + share + '%</div>' +
-      (popPerStore > 0 ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text-muted);">매장 1개 당 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popPerStore) + '</strong>명</div>' : '') +
-      (salesPerHh > 0 ? '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">세대당 매출 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + salesPerHh.toLocaleString() + '</strong>원</div>' : '') +
+      '<div style="font-size:10px;color:var(--text-dim);margin-top:3px;text-align:right;">점유 ' + share + '%</div>' +
+      // 인구 지표
+      ((popPerStore > 0 || salesPerHh > 0) ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);">' +
+        (popPerStore > 0 ? '<div>1점당 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popPerStore) + '</strong>명</div>' : '<div></div>') +
+        (salesPerHh > 0 ? '<div>세대당 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + salesPerHh.toLocaleString() + '</strong>원</div>' : '<div></div>') +
+      '</div>' : '') +
       '</div>';
   });
   html += '</div>';
@@ -1385,19 +1398,11 @@ function toggleBrandDetail(brand, region) {
 
   var maxS25 = storeList.length > 0 && storeList[0].sales ? storeList[0].sales.s25 : 1;
 
-  var html = '<div style="margin-top:12px;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-      '<span style="font-size:13px;font-weight:700;color:' + bc + ';">' + brand + ' 매장별 매출</span>' +
-      '<span style="font-size:10px;color:var(--text-dim);">' + (isAll ? '전국' : region) + ' | ' + storeList.length + '개</span>' +
-    '</div>' +
-    '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
-    '<tr style="color:var(--text-dim);border-bottom:1px solid var(--border);">' +
-      '<th style="text-align:left;padding:4px 6px;font-weight:500;">매장</th>' +
-      '<th style="text-align:right;padding:4px 6px;font-weight:500;">\'25 매출</th>' +
-      '<th style="text-align:right;padding:4px 6px;font-weight:500;">\'24 매출</th>' +
-      '<th style="text-align:right;padding:4px 6px;font-weight:500;">증감</th>' +
-      '<th style="text-align:left;padding:4px 6px;font-weight:500;width:80px;"></th>' +
-    '</tr>';
+  var html = '<div style="margin-top:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:320px;overflow-y:auto;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+      '<span style="font-size:12px;font-weight:700;color:' + bc + ';">' + brand + ' 매장별 매출</span>' +
+      '<span style="font-size:10px;color:var(--text-dim);">' + storeList.length + '개</span>' +
+    '</div>';
 
   storeList.forEach(function(r, idx) {
     var s25 = (r.sales && r.sales.s25 > 0) ? r.sales.s25 : 0;
@@ -1411,16 +1416,20 @@ function toggleBrandDetail(brand, region) {
     }
     var barW = maxS25 > 0 ? (s25 / maxS25 * 100) : 0;
 
-    html += '<tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="selectStore(' + r.store.id + ')">' +
-      '<td style="padding:5px 6px;color:var(--text);">' + displayName(r.store) + '</td>' +
-      '<td style="padding:5px 6px;text-align:right;font-family:DM Mono,monospace;color:var(--text);">' + (s25 > 0 ? formatSales(s25) : '-') + '</td>' +
-      '<td style="padding:5px 6px;text-align:right;font-family:DM Mono,monospace;color:var(--text-dim);">' + (s24 > 0 ? formatSales(s24) : '-') + '</td>' +
-      '<td style="padding:5px 6px;text-align:right;font-weight:600;color:' + changeColor + ';">' + (changePct !== '-' ? changeSign + changePct + '%' : '-') + '</td>' +
-      '<td style="padding:5px 6px;"><div style="height:4px;background:var(--border);border-radius:2px;"><div style="height:100%;width:' + barW + '%;background:' + bc + ';border-radius:2px;"></div></div></td>' +
-    '</tr>';
+    html += '<div style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="selectStore(' + r.store.id + ')">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-size:11px;color:var(--text);font-weight:500;">' + displayName(r.store) + '</span>' +
+        '<span style="font-size:10px;font-weight:600;color:' + changeColor + ';">' + (changePct !== '-' ? changeSign + changePct + '%' : '') + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">' +
+        '<span style="font-size:9px;color:var(--text-dim);font-family:DM Mono,monospace;">\'24 ' + (s24 > 0 ? formatSales(s24) : '-') + '</span>' +
+        '<span style="font-size:11px;font-family:DM Mono,monospace;color:var(--text);">' + (s25 > 0 ? formatSales(s25) : '-') + '</span>' +
+      '</div>' +
+      '<div style="height:3px;background:var(--border);border-radius:2px;margin-top:3px;"><div style="height:100%;width:' + barW + '%;background:' + bc + ';border-radius:2px;"></div></div>' +
+    '</div>';
   });
 
-  html += '</table></div>';
+  html += '</div>';
   area.innerHTML = html;
 }
 
