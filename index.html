@@ -277,36 +277,36 @@
   .legend-circle { border-radius: 50%; flex-shrink: 0; }
   /* 지역 대시보드 - 좌측 세로 패널 */
   .region-dashboard {
-    position: absolute; top: 0; left: 0; bottom: 0; width: 320px;
+    position: absolute; top: 0; left: 0; bottom: 0; width: 640px;
     background: var(--surface); border-right: 1px solid var(--border);
-    padding: 16px 18px 16px 18px; z-index: 999; display: none;
+    padding: 22px 26px 22px 26px; z-index: 999; display: none;
     box-shadow: 4px 0 20px rgba(0,0,0,0.4);
     overflow-y: auto;
   }
   .region-dashboard.visible { display: block; }
-  .region-dashboard::-webkit-scrollbar { width: 4px; }
+  .region-dashboard::-webkit-scrollbar { width: 6px; }
   .region-dashboard::-webkit-scrollbar-track { background: transparent; }
-  .region-dashboard::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .region-dashboard::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   .region-dashboard-close {
-    position: absolute; top: 12px; right: 12px; width: 24px; height: 24px;
+    position: absolute; top: 16px; right: 16px; width: 28px; height: 28px;
     border-radius: 50%; background: var(--surface2); border: 1px solid var(--border);
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    color: var(--text-muted); font-size: 13px;
+    color: var(--text-muted); font-size: 14px;
   }
   .region-dashboard-close:hover { background: var(--border); }
-  .rd-header { font-size: 14px; font-weight: 700; margin-bottom: 4px; padding-right: 30px; }
-  .rd-pop-line { font-size: 11px; color: var(--text-muted); margin-bottom: 14px; padding-right: 30px; }
+  .rd-header { font-size: 18px; font-weight: 700; margin-bottom: 6px; padding-right: 36px; }
+  .rd-pop-line { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; padding-right: 36px; }
   .rd-pop-line strong { color: var(--text); font-family: 'DM Mono', monospace; }
-  .rd-grid { display: flex; flex-direction: column; gap: 8px; }
+  .rd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .rd-card {
     background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 12px; text-align: left;
+    border-radius: 10px; padding: 14px 16px; text-align: left;
   }
-  .rd-brand { font-size: 11px; font-weight: 600; margin-bottom: 6px; }
-  .rd-count { font-size: 22px; font-weight: 700; font-family: 'DM Mono', monospace; }
-  .rd-sales { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-  .rd-bar-wrap { margin-top: 6px; height: 4px; background: var(--border); border-radius: 2px; }
-  .rd-bar { height: 100%; border-radius: 2px; }
+  .rd-brand { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .rd-count { font-size: 26px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .rd-sales { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .rd-bar-wrap { margin-top: 8px; height: 5px; background: var(--border); border-radius: 3px; }
+  .rd-bar { height: 100%; border-radius: 3px; }
   /* 공백 분석 */
   .gap-sub-tab {
     flex: 1; padding: 7px 0; border-radius: 6px; font-size: 12px; font-weight: 600;
@@ -1369,14 +1369,14 @@ function showRegionDashboard(region) {
   var totalChangeSign = totalS25 >= totalS24 ? '+' : '';
   html += '<div class="rd-card" style="border-color:var(--border);">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-      '<div style="font-size:11px;font-weight:600;color:var(--text-muted);">전체</div>' +
-      '<div style="font-size:18px;font-weight:700;font-family:DM Mono,monospace;">' + totalStores + '<span style="font-size:10px;font-weight:400;color:var(--text-muted);">개</span></div>' +
+      '<div style="font-size:13px;font-weight:600;color:var(--text-muted);">전체</div>' +
+      '<div style="font-size:24px;font-weight:700;font-family:DM Mono,monospace;">' + totalStores + '<span style="font-size:12px;font-weight:400;color:var(--text-muted);">개</span></div>' +
     '</div>' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">' +
-      '<div style="font-size:10px;color:var(--text-dim);">\'24 ' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</div>' +
-      '<div style="font-size:12px;font-weight:600;">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
+      '<div style="font-size:12px;color:var(--text-dim);">\'24 ' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</div>' +
+      '<div style="font-size:15px;font-weight:600;">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
     '</div>' +
-    (totalS24 > 0 ? '<div style="text-align:right;font-size:10px;font-weight:600;margin-top:2px;' + totalChangeStyle + '">' + totalChangeSign + totalChange + '% YoY</div>' : '') +
+    (totalS24 > 0 ? '<div style="text-align:right;font-size:12px;font-weight:600;margin-top:3px;' + totalChangeStyle + '">' + totalChangeSign + totalChange + '% YoY</div>' : '') +
     '</div>';
 
   // 브랜드별 카드 (클릭 시 매장별 상세)
@@ -1391,23 +1391,23 @@ function showRegionDashboard(region) {
     var popPerStore = d.count > 0 && popTotal > 0 ? Math.round(popTotal / d.count) : 0;
     var salesPerHh = d.count > 0 && d.s25 > 0 && hhTotal > 0 ? Math.round(d.s25 / hhTotal) : 0;
 
-    html += '<div class="rd-card" style="border-left:3px solid ' + bc + ';cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
+    html += '<div class="rd-card" style="border-left:4px solid ' + bc + ';cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
       // 헤더: 브랜드명 + 매장수
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<div style="font-size:12px;font-weight:700;color:' + bc + ';">' + b + ' <span style="font-size:9px;color:#fff;">▼</span></div>' +
-        '<div style="font-size:18px;font-weight:700;font-family:DM Mono,monospace;">' + d.count + '<span style="font-size:10px;font-weight:400;color:var(--text-muted);">개</span></div>' +
+        '<div style="font-size:14px;font-weight:700;color:' + bc + ';">' + b + ' <span style="font-size:11px;color:#fff;">▼</span></div>' +
+        '<div style="font-size:24px;font-weight:700;font-family:DM Mono,monospace;">' + d.count + '<span style="font-size:12px;font-weight:400;color:var(--text-muted);">개</span></div>' +
       '</div>' +
       // 매출
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">' +
-        '<div style="font-size:10px;color:var(--text-dim);">\'24 ' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</div>' +
-        '<div style="font-size:12px;font-weight:600;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
+        '<div style="font-size:12px;color:var(--text-dim);">\'24 ' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</div>' +
+        '<div style="font-size:15px;font-weight:600;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
       '</div>' +
-      (d.s24 > 0 ? '<div style="text-align:right;font-size:10px;font-weight:600;margin-top:2px;' + changeStyle + '">' + changeSign + change + '% YoY</div>' : '') +
+      (d.s24 > 0 ? '<div style="text-align:right;font-size:12px;font-weight:600;margin-top:3px;' + changeStyle + '">' + changeSign + change + '% YoY</div>' : '') +
       // 점유율 바
-      '<div class="rd-bar-wrap" style="margin-top:6px;"><div class="rd-bar" style="width:' + salesPct + '%;background:' + bc + ';"></div></div>' +
-      '<div style="font-size:10px;color:var(--text-dim);margin-top:3px;text-align:right;">점유 ' + share + '%</div>' +
+      '<div class="rd-bar-wrap" style="margin-top:8px;"><div class="rd-bar" style="width:' + salesPct + '%;background:' + bc + ';"></div></div>' +
+      '<div style="font-size:11px;color:var(--text-dim);margin-top:4px;text-align:right;">점유 ' + share + '%</div>' +
       // 인구 지표
-      ((popPerStore > 0 || salesPerHh > 0) ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);">' +
+      ((popPerStore > 0 || salesPerHh > 0) ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);">' +
         (popPerStore > 0 ? '<div>1점당 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popPerStore) + '</strong>명</div>' : '<div></div>') +
         (salesPerHh > 0 ? '<div>세대당 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + salesPerHh.toLocaleString() + '</strong>원</div>' : '<div></div>') +
       '</div>' : '') +
