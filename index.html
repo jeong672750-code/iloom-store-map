@@ -917,8 +917,18 @@ function setFilter(region) {
   }
   // 해당 지역으로 지도 이동: 시도 경계 폴리곤의 bounding box 우선 사용
   if (region === '전체') {
-    if (mapEngine === 'kakao' && mapObj) { mapObj.setCenter(new kakao.maps.LatLng(36.5, 127.8)); mapObj.setLevel(12); }
-    else if (mapEngine === 'leaflet' && mapObj) { mapObj.setView([36.5, 127.8], 7, { animate: true }); }
+    // 전국 bbox: 한반도 남쪽 (제주~강원)
+    var koreaBounds = { minLat: 33.1, maxLat: 38.6, minLng: 125.0, maxLng: 130.0 };
+    var pad = 40;
+    if (mapEngine === 'kakao' && mapObj) {
+      var bounds = new kakao.maps.LatLngBounds(
+        new kakao.maps.LatLng(koreaBounds.minLat, koreaBounds.minLng),
+        new kakao.maps.LatLng(koreaBounds.maxLat, koreaBounds.maxLng)
+      );
+      mapObj.setBounds(bounds, pad, pad, pad, pad);
+    } else if (mapEngine === 'leaflet' && mapObj) {
+      mapObj.fitBounds([[koreaBounds.minLat, koreaBounds.minLng], [koreaBounds.maxLat, koreaBounds.maxLng]], { padding: [pad, pad], animate: true });
+    }
   } else {
     var minLat=90,maxLat=-90,minLng=180,maxLng=-180;
     var found = false;
