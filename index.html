@@ -915,26 +915,52 @@ function setFilter(region) {
   if (document.getElementById('regionDashboard').classList.contains('visible')) {
     showRegionDashboard(region);
   }
-  // 해당 지역 매장들의 중심으로 지도 이동
+  // 해당 지역으로 지도 이동: 시도 경계 폴리곤의 bounding box 우선 사용
   if (region === '전체') {
     if (mapEngine === 'kakao' && mapObj) { mapObj.setCenter(new kakao.maps.LatLng(36.5, 127.8)); mapObj.setLevel(12); }
     else if (mapEngine === 'leaflet' && mapObj) { mapObj.setView([36.5, 127.8], 7, { animate: true }); }
   } else {
-    var filtered = getFilteredStores();
-    if (filtered.length > 0) {
-      var minLat=90,maxLat=-90,minLng=180,maxLng=-180;
+    var minLat=90,maxLat=-90,minLng=180,maxLng=-180;
+    var found = false;
+    // 1순위: 경계 폴리곤 좌표로 bbox
+    if (typeof DISTRICT_BOUNDARIES !== 'undefined') {
+      var sidoBoundaries = DISTRICT_BOUNDARIES.filter(function(d) { return d.sido === region; });
+      sidoBoundaries.forEach(function(d) {
+        var polys = d.type === 'MultiPolygon' ? d.coords : [d.coords];
+        polys.forEach(function(poly) {
+          var outer = poly[0];
+          if (!outer) return;
+          outer.forEach(function(c) {
+            var lng = c[0], lat = c[1];
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+            found = true;
+          });
+        });
+      });
+    }
+    // 2순위: 매장 좌표로 bbox
+    if (!found) {
+      var filtered = getFilteredStores();
       filtered.forEach(function(s) {
         if (s.lat < minLat) minLat = s.lat;
         if (s.lat > maxLat) maxLat = s.lat;
         if (s.lng < minLng) minLng = s.lng;
         if (s.lng > maxLng) maxLng = s.lng;
+        found = true;
       });
-      var cLat = (minLat + maxLat) / 2, cLng = (minLng + maxLng) / 2;
+    }
+    if (found) {
+      // 패널 열려있으면 좌측 패딩 더 크게
+      var dashOpen = document.getElementById('regionDashboard').classList.contains('visible');
+      var pad = dashOpen ? 60 : 80;
       if (mapEngine === 'kakao' && mapObj) {
         var bounds = new kakao.maps.LatLngBounds(new kakao.maps.LatLng(minLat, minLng), new kakao.maps.LatLng(maxLat, maxLng));
-        mapObj.setBounds(bounds, 80, 80, 80, 80);
+        mapObj.setBounds(bounds, pad, pad, pad, pad);
       } else if (mapEngine === 'leaflet' && mapObj) {
-        mapObj.fitBounds([[minLat, minLng], [maxLat, maxLng]], { padding: [40, 40], animate: true });
+        mapObj.fitBounds([[minLat, minLng], [maxLat, maxLng]], { padding: [pad, pad], animate: true });
       }
     }
   }
@@ -1503,11 +1529,13 @@ function toggleSalesDashboard() {
 
 function relayoutMap() {
   if (mapEngine === 'kakao' && mapObj && mapObj.relayout) {
-    var center = mapObj.getCenter();
     mapObj.relayout();
-    mapObj.setCenter(center);
   } else if (mapEngine === 'leaflet' && mapObj && mapObj.invalidateSize) {
     mapObj.invalidateSize();
+  }
+  // 패널 토글 후 현재 지역으로 다시 fit
+  if (activeFilter && activeFilter !== '전체') {
+    setFilter(activeFilter);
   }
 }
 
