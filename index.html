@@ -15,6 +15,7 @@
 <script src="competitors_data.js"></script>
 <script src="sales_data.js"></script>
 <script src="population_data.js"></script>
+<script src="district_boundaries.js"></script>
 <style>
   :root {
     --bg: #0d0f14;
@@ -855,6 +856,53 @@ function renderRegionFilters() {
   }).join('');
 }
 
+var districtPolygons = [];
+function clearDistrictBoundaries() {
+  districtPolygons.forEach(function(p) {
+    if (mapEngine === 'kakao') p.setMap(null);
+    else if (mapEngine === 'leaflet' && mapObj) mapObj.removeLayer(p);
+  });
+  districtPolygons = [];
+}
+
+function drawDistrictBoundaries(region) {
+  clearDistrictBoundaries();
+  if (region === '전체' || typeof DISTRICT_BOUNDARIES === 'undefined') return;
+  var districts = DISTRICT_BOUNDARIES.filter(function(d) { return d.sido === region; });
+  if (districts.length === 0) return;
+
+  districts.forEach(function(d) {
+    // MultiPolygon: coords = [[[ring1], [ring2]], ...]
+    // Polygon: coords = [[ring1], [ring2]]
+    var polys = d.type === 'MultiPolygon' ? d.coords : [d.coords];
+    polys.forEach(function(poly) {
+      // poly = [outer_ring, hole1, hole2, ...]
+      var outer = poly[0]; // outer ring only (구멍 무시)
+      if (mapEngine === 'kakao' && mapObj) {
+        var path = outer.map(function(c) { return new kakao.maps.LatLng(c[1], c[0]); });
+        var polygon = new kakao.maps.Polygon({
+          path: path,
+          strokeWeight: 2,
+          strokeColor: '#3b82f6',
+          strokeOpacity: 0.9,
+          strokeStyle: 'solid',
+          fillColor: '#3b82f6',
+          fillOpacity: 0.12,
+          map: mapObj
+        });
+        districtPolygons.push(polygon);
+      } else if (mapEngine === 'leaflet' && mapObj) {
+        var latlngs = outer.map(function(c) { return [c[1], c[0]]; });
+        var polygon = L.polygon(latlngs, {
+          color: '#3b82f6', weight: 2, opacity: 0.9,
+          fillColor: '#3b82f6', fillOpacity: 0.12
+        }).addTo(mapObj);
+        districtPolygons.push(polygon);
+      }
+    });
+  });
+}
+
 function setFilter(region) {
   activeFilter = region;
   document.querySelectorAll('.region-btn').forEach(function(btn) {
@@ -862,6 +910,7 @@ function setFilter(region) {
   });
   renderStoreList();
   updateMarkers();
+  drawDistrictBoundaries(region);
   if (document.getElementById('regionDashboard').classList.contains('visible')) {
     showRegionDashboard(region);
   }
