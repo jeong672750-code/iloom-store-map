@@ -295,8 +295,8 @@
   }
   .region-dashboard-close:hover { background: var(--border); }
   .rd-header { font-size: 22px; font-weight: 700; margin-bottom: 8px; padding-right: 40px; }
-  .rd-pop-line { font-size: 15px; color: var(--text-muted); margin-bottom: 22px; padding-right: 40px; }
-  .rd-pop-line strong { color: var(--text); font-family: 'DM Mono', monospace; font-size: 16px; }
+  .rd-pop-line { font-size: 15px; color: #cbd5e1; margin-bottom: 22px; padding-right: 40px; }
+  .rd-pop-line strong { color: #fff; font-family: 'DM Mono', monospace; font-size: 17px; }
   .rd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .rd-card {
     background: var(--surface2); border: 1px solid var(--border);
@@ -1396,12 +1396,12 @@ function showRegionDashboard(region) {
   var totalChangeSign = totalS25 >= totalS24 ? '+' : '';
   html += '<div class="rd-card" style="border-color:var(--border);">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-      '<div style="font-size:16px;font-weight:700;color:var(--text-muted);">전체</div>' +
-      '<div style="font-size:32px;font-weight:700;font-family:DM Mono,monospace;">' + totalStores + '<span style="font-size:14px;font-weight:400;color:var(--text-muted);">개</span></div>' +
+      '<div style="font-size:16px;font-weight:700;color:#cbd5e1;">전체</div>' +
+      '<div style="font-size:32px;font-weight:700;font-family:DM Mono,monospace;color:#fff;">' + totalStores + '<span style="font-size:14px;font-weight:400;color:#9ca3af;">개</span></div>' +
     '</div>' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">' +
-      '<div style="font-size:14px;color:var(--text-dim);">\'24 ' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</div>' +
-      '<div style="font-size:18px;font-weight:600;">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
+      '<div style="font-size:14px;color:#9ca3af;">\'24 ' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</div>' +
+      '<div style="font-size:18px;font-weight:600;color:#fff;">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
     '</div>' +
     (totalS24 > 0 ? '<div style="text-align:right;font-size:14px;font-weight:600;margin-top:4px;' + totalChangeStyle + '">' + totalChangeSign + totalChange + '% YoY</div>' : '') +
     '</div>';
@@ -1426,17 +1426,17 @@ function showRegionDashboard(region) {
       '</div>' +
       // 매출
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">' +
-        '<div style="font-size:14px;color:var(--text-dim);">\'24 ' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</div>' +
-        '<div style="font-size:18px;font-weight:600;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
+        '<div style="font-size:14px;color:#9ca3af;">\'24 ' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#fff;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
       '</div>' +
       (d.s24 > 0 ? '<div style="text-align:right;font-size:14px;font-weight:600;margin-top:4px;' + changeStyle + '">' + changeSign + change + '% YoY</div>' : '') +
       // 점유율 바
       '<div class="rd-bar-wrap" style="margin-top:10px;"><div class="rd-bar" style="width:' + salesPct + '%;background:' + bc + ';"></div></div>' +
-      '<div style="font-size:13px;color:var(--text-dim);margin-top:5px;text-align:right;">점유 ' + share + '%</div>' +
+      '<div style="font-size:13px;color:#cbd5e1;margin-top:5px;text-align:right;">점유 <strong style="color:#fff;">' + share + '%</strong></div>' +
       // 인구 지표
-      ((popPerStore > 0 || salesPerHh > 0) ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:14px;color:var(--text-muted);">' +
-        (popPerStore > 0 ? '<div>1점당 <strong style="color:var(--text);font-family:DM Mono,monospace;font-size:15px;">' + formatPop(popPerStore) + '</strong>명</div>' : '<div></div>') +
-        (salesPerHh > 0 ? '<div>세대당 <strong style="color:var(--text);font-family:DM Mono,monospace;font-size:15px;">' + salesPerHh.toLocaleString() + '</strong>원</div>' : '<div></div>') +
+      ((popPerStore > 0 || salesPerHh > 0) ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:14px;color:#cbd5e1;">' +
+        (popPerStore > 0 ? '<div>1점당 <strong style="color:#fff;font-family:DM Mono,monospace;font-size:16px;">' + formatPop(popPerStore) + '</strong>명</div>' : '<div></div>') +
+        (salesPerHh > 0 ? '<div>세대당 <strong style="color:#fff;font-family:DM Mono,monospace;font-size:16px;">' + salesPerHh.toLocaleString() + '</strong>원</div>' : '<div></div>') +
       '</div>' : '') +
       '</div>';
   });
