@@ -1281,40 +1281,32 @@ function showRegionDashboard(region) {
   var title = isAll ? '전국 브랜드 현황' : region + ' 지역 현황';
 
   // 인구통계 계산
-  var popTotal = 0, hhTotal = 0, areaTotal = 0;
+  var popTotal = 0, hhTotal = 0;
   if (typeof POPULATION_DATA !== 'undefined') {
     if (isAll) {
       Object.keys(POPULATION_DATA).forEach(function(r) {
         popTotal += POPULATION_DATA[r].pop;
         hhTotal += POPULATION_DATA[r].household;
-        areaTotal += POPULATION_DATA[r].area;
       });
     } else if (POPULATION_DATA[region]) {
       popTotal = POPULATION_DATA[region].pop;
       hhTotal = POPULATION_DATA[region].household;
-      areaTotal = POPULATION_DATA[region].area;
     }
   }
-  var popPerStore = totalStores > 0 && popTotal > 0 ? Math.round(popTotal / totalStores) : 0;
-  var hhPerStore = totalStores > 0 && hhTotal > 0 ? Math.round(hhTotal / totalStores) : 0;
-  var iloomCount = data['일룸'].count;
-  var popPerIloom = iloomCount > 0 && popTotal > 0 ? Math.round(popTotal / iloomCount) : 0;
+
+  var formatPop = function(n) {
+    if (n >= 10000) return (n / 10000).toFixed(0) + '만';
+    return n.toLocaleString();
+  };
 
   var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">';
   html += '<div class="rd-header" style="margin-bottom:0;">' + title + '</div>';
 
   // 인구통계 요약 (오른쪽 정렬)
   if (popTotal > 0) {
-    var formatPop = function(n) {
-      if (n >= 10000) return (n / 10000).toFixed(0) + '만';
-      return n.toLocaleString();
-    };
     html += '<div style="display:flex;gap:16px;font-size:11px;color:var(--text-muted);">' +
-      '<div>인구 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popTotal) + '</strong></div>' +
+      '<div>인구 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popTotal) + '</strong>명</div>' +
       '<div>세대 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(hhTotal) + '</strong></div>' +
-      '<div>면적 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + areaTotal.toLocaleString() + '</strong>km²</div>' +
-      '<div style="border-left:1px solid var(--border);padding-left:12px;">일룸 1점당 <strong style="color:var(--accent);font-family:DM Mono,monospace;">' + formatPop(popPerIloom) + '</strong>명</div>' +
-      '<div>전체 1점당 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popPerStore) + '</strong>명</div>' +
     '</div>';
   }
   html += '</div>';
@@ -1342,8 +1334,12 @@ function showRegionDashboard(region) {
     var change = d.s24 > 0 ? ((d.s25 - d.s24) / d.s24 * 100).toFixed(1) : 0;
     var changeStyle = d.s25 >= d.s24 ? 'color:#34d399;' : 'color:#f87171;';
     var changeSign = d.s25 >= d.s24 ? '+' : '';
+    // 매장 1개 당 인구
+    var popPerStore = d.count > 0 && popTotal > 0 ? Math.round(popTotal / d.count) : 0;
+    // 세대당 매출 (원)
+    var salesPerHh = d.count > 0 && d.s25 > 0 && hhTotal > 0 ? Math.round(d.s25 / hhTotal) : 0;
 
-    html += '<div class="rd-card" style="border-left:3px solid ' + bc + ';min-width:150px;cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
+    html += '<div class="rd-card" style="border-left:3px solid ' + bc + ';min-width:160px;cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
       '<div class="rd-brand" style="color:' + bc + ';">' + b + ' <span style="font-size:9px;color:#fff;">▼</span></div>' +
       '<div class="rd-count">' + d.count + '<span style="font-size:11px;font-weight:400;color:var(--text-muted);">개</span></div>' +
       '<div class="rd-sales" style="font-weight:600;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
@@ -1351,6 +1347,8 @@ function showRegionDashboard(region) {
       (d.s24 > 0 ? '<div style="font-size:11px;font-weight:600;margin-top:4px;' + changeStyle + '">' + changeSign + change + '% <span style="font-size:9px;color:var(--text-dim);">YoY</span></div>' : '') +
       '<div class="rd-bar-wrap" style="margin-top:6px;"><div class="rd-bar" style="width:' + salesPct + '%;background:' + bc + ';"></div></div>' +
       '<div style="font-size:10px;color:var(--text-dim);margin-top:4px;">점유 ' + share + '%</div>' +
+      (popPerStore > 0 ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text-muted);">매장 1개 당 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + formatPop(popPerStore) + '</strong>명</div>' : '') +
+      (salesPerHh > 0 ? '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">세대당 매출 <strong style="color:var(--text);font-family:DM Mono,monospace;">' + salesPerHh.toLocaleString() + '</strong>원</div>' : '') +
       '</div>';
   });
   html += '</div>';
