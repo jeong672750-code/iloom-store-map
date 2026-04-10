@@ -99,18 +99,18 @@
   }
   .store-item:hover { background: var(--surface2); border-left-color: var(--accent2); }
   .store-item.active { background: var(--surface2); border-left-color: var(--accent); }
-  .store-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); min-width: 24px; padding-top: 2px; }
+  .store-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim); min-width: 26px; padding-top: 2px; }
   .store-info { flex: 1; min-width: 0; }
-  .store-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .store-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
   .stype-tag {
-    font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; flex-shrink: 0;
+    font-size: 11px; padding: 1px 6px; border-radius: 3px; font-weight: 600; flex-shrink: 0;
   }
   .stype-tag.direct { background: rgba(52,211,153,0.15); color: #34d399; }
   .stype-tag.dealer { background: rgba(251,191,36,0.15); color: #fbbf24; }
-  .store-addr { font-size: 12px; color: var(--text-muted); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .store-addr { font-size: 13px; color: #cbd5e1; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .store-region-tag {
     font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--surface2);
-    color: var(--text-dim); border: 1px solid var(--border); flex-shrink: 0; margin-top: 2px;
+    color: var(--text-muted); border: 1px solid var(--border); flex-shrink: 0; margin-top: 2px;
   }
   .map-container { flex: 1; position: relative; overflow: hidden; }
   #map { width: 100%; height: 100%; background: #1a1a2e; }
@@ -917,23 +917,38 @@ function setFilter(region) {
   }
   // 해당 지역으로 지도 이동: 시도 경계 폴리곤의 bounding box 우선 사용
   if (region === '전체') {
-    // 전국 bbox: 한반도 남쪽 (제주~강원)
-    var koreaBounds = { minLat: 33.1, maxLat: 38.6, minLng: 125.0, maxLng: 130.0 };
-    var pad = 40;
+    // 전국 매장 좌표 기반 bbox (실제 매장 분포로 fit)
+    var minLat=90,maxLat=-90,minLng=180,maxLng=-180;
+    allStores.forEach(function(s) {
+      if (s.lat < minLat) minLat = s.lat;
+      if (s.lat > maxLat) maxLat = s.lat;
+      if (s.lng < minLng) minLng = s.lng;
+      if (s.lng > maxLng) maxLng = s.lng;
+    });
+    var pad = 50;
     if (mapEngine === 'kakao' && mapObj) {
       var bounds = new kakao.maps.LatLngBounds(
-        new kakao.maps.LatLng(koreaBounds.minLat, koreaBounds.minLng),
-        new kakao.maps.LatLng(koreaBounds.maxLat, koreaBounds.maxLng)
+        new kakao.maps.LatLng(minLat, minLng),
+        new kakao.maps.LatLng(maxLat, maxLng)
       );
       mapObj.setBounds(bounds, pad, pad, pad, pad);
     } else if (mapEngine === 'leaflet' && mapObj) {
-      mapObj.fitBounds([[koreaBounds.minLat, koreaBounds.minLng], [koreaBounds.maxLat, koreaBounds.maxLng]], { padding: [pad, pad], animate: true });
+      mapObj.fitBounds([[minLat, minLng], [maxLat, maxLng]], { padding: [pad, pad], animate: true });
     }
   } else {
     var minLat=90,maxLat=-90,minLng=180,maxLng=-180;
     var found = false;
-    // 1순위: 경계 폴리곤 좌표로 bbox
-    if (typeof DISTRICT_BOUNDARIES !== 'undefined') {
+    // 1순위: 매장 좌표로 bbox (도심 위주로 자연스럽게 fit)
+    var regionStores = allStores.filter(function(s) { return s.region === region; });
+    regionStores.forEach(function(s) {
+      if (s.lat < minLat) minLat = s.lat;
+      if (s.lat > maxLat) maxLat = s.lat;
+      if (s.lng < minLng) minLng = s.lng;
+      if (s.lng > maxLng) maxLng = s.lng;
+      found = true;
+    });
+    // 2순위: 매장이 없을 경우 경계 폴리곤
+    if (!found && typeof DISTRICT_BOUNDARIES !== 'undefined') {
       var sidoBoundaries = DISTRICT_BOUNDARIES.filter(function(d) { return d.sido === region; });
       sidoBoundaries.forEach(function(d) {
         var polys = d.type === 'MultiPolygon' ? d.coords : [d.coords];
@@ -949,17 +964,6 @@ function setFilter(region) {
             found = true;
           });
         });
-      });
-    }
-    // 2순위: 매장 좌표로 bbox
-    if (!found) {
-      var filtered = getFilteredStores();
-      filtered.forEach(function(s) {
-        if (s.lat < minLat) minLat = s.lat;
-        if (s.lat > maxLat) maxLat = s.lat;
-        if (s.lng < minLng) minLng = s.lng;
-        if (s.lng > maxLng) maxLng = s.lng;
-        found = true;
       });
     }
     if (found) {
