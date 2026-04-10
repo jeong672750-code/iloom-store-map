@@ -1360,6 +1360,15 @@ function showRegionDashboard(region) {
   });
   var maxSales = Math.max.apply(null, brands.map(function(b) { return data[b].s25; }));
 
+  // 매장당 매출 효율 계산 + 랭킹
+  var perStoreSales = {};
+  brands.forEach(function(b) {
+    perStoreSales[b] = (data[b].count > 0 && data[b].s25 > 0) ? data[b].s25 / data[b].count : 0;
+  });
+  var efficiencyRank = brands.slice().filter(function(b){return perStoreSales[b]>0;}).sort(function(a, b) {
+    return perStoreSales[b] - perStoreSales[a];
+  });
+
   var title = isAll ? '전국 브랜드 현황' : region + ' 지역 현황';
 
   // 인구통계 계산
@@ -1396,11 +1405,11 @@ function showRegionDashboard(region) {
   var totalChangeSign = totalS25 >= totalS24 ? '+' : '';
   html += '<div class="rd-card" style="border-color:var(--border);">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-      '<div style="font-size:16px;font-weight:700;color:#cbd5e1;">전체</div>' +
-      '<div style="font-size:32px;font-weight:700;font-family:DM Mono,monospace;color:#fff;">' + totalStores + '<span style="font-size:14px;font-weight:400;color:#9ca3af;">개</span></div>' +
+      '<div style="font-size:16px;font-weight:700;color:#e2e8f0;">전체</div>' +
+      '<div style="font-size:32px;font-weight:700;font-family:DM Mono,monospace;color:#fff;">' + totalStores + '<span style="font-size:14px;font-weight:400;color:#cbd5e1;">개</span></div>' +
     '</div>' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">' +
-      '<div style="font-size:14px;color:#9ca3af;">\'24 ' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</div>' +
+      '<div style="font-size:14px;color:#cbd5e1;">\'24 <span style="color:#e2e8f0;">' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</span></div>' +
       '<div style="font-size:18px;font-weight:600;color:#fff;">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
     '</div>' +
     (totalS24 > 0 ? '<div style="text-align:right;font-size:14px;font-weight:600;margin-top:4px;' + totalChangeStyle + '">' + totalChangeSign + totalChange + '% YoY</div>' : '') +
@@ -1418,25 +1427,40 @@ function showRegionDashboard(region) {
     var popPerStore = d.count > 0 && popTotal > 0 ? Math.round(popTotal / d.count) : 0;
     var salesPerHh = d.count > 0 && d.s25 > 0 && hhTotal > 0 ? Math.round(d.s25 / hhTotal) : 0;
 
+    // 매장당 매출 효율 + 순위
+    var perStore = perStoreSales[b];
+    var effRank = efficiencyRank.indexOf(b);
+    var effRankBadge = '';
+    if (perStore > 0 && effRank >= 0) {
+      var rankColors = ['#fbbf24', '#e5e7eb', '#fb923c', '#94a3b8', '#94a3b8'];
+      effRankBadge = '<span style="display:inline-block;background:' + rankColors[effRank] + ';color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">효율 ' + (effRank + 1) + '위</span>';
+    }
+
     html += '<div class="rd-card" style="border-left:5px solid ' + bc + ';cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
       // 헤더: 브랜드명 + 매장수
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
         '<div style="font-size:18px;font-weight:700;color:' + bc + ';">' + b + ' <span style="font-size:13px;color:#fff;">▼</span></div>' +
-        '<div style="font-size:32px;font-weight:700;font-family:DM Mono,monospace;">' + d.count + '<span style="font-size:14px;font-weight:400;color:var(--text-muted);">개</span></div>' +
+        '<div style="font-size:32px;font-weight:700;font-family:DM Mono,monospace;color:#fff;">' + d.count + '<span style="font-size:14px;font-weight:400;color:#cbd5e1;">개</span></div>' +
       '</div>' +
       // 매출
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">' +
-        '<div style="font-size:14px;color:#9ca3af;">\'24 ' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</div>' +
+        '<div style="font-size:14px;color:#cbd5e1;">\'24 <span style="color:#e2e8f0;">' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</span></div>' +
         '<div style="font-size:18px;font-weight:600;color:#fff;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
       '</div>' +
       (d.s24 > 0 ? '<div style="text-align:right;font-size:14px;font-weight:600;margin-top:4px;' + changeStyle + '">' + changeSign + change + '% YoY</div>' : '') +
       // 점유율 바
       '<div class="rd-bar-wrap" style="margin-top:10px;"><div class="rd-bar" style="width:' + salesPct + '%;background:' + bc + ';"></div></div>' +
-      '<div style="font-size:13px;color:#cbd5e1;margin-top:5px;text-align:right;">점유 <strong style="color:#fff;">' + share + '%</strong></div>' +
-      // 인구 지표
-      ((popPerStore > 0 || salesPerHh > 0) ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:14px;color:#cbd5e1;">' +
-        (popPerStore > 0 ? '<div>1점당 <strong style="color:#fff;font-family:DM Mono,monospace;font-size:16px;">' + formatPop(popPerStore) + '</strong>명</div>' : '<div></div>') +
-        (salesPerHh > 0 ? '<div>세대당 <strong style="color:#fff;font-family:DM Mono,monospace;font-size:16px;">' + salesPerHh.toLocaleString() + '</strong>원</div>' : '<div></div>') +
+      '<div style="font-size:13px;color:#e2e8f0;margin-top:5px;text-align:right;">점유 <strong style="color:#fff;">' + share + '%</strong></div>' +
+      // 핵심 지표: 매장당 매출 (가장 직관적)
+      (perStore > 0 ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<span style="font-size:13px;color:#e2e8f0;">매장당 매출' + effRankBadge + '</span>' +
+          '<span style="font-size:18px;font-weight:700;color:#fff;font-family:DM Mono,monospace;">' + formatSales(perStore) + '</span>' +
+        '</div>' +
+        (popPerStore > 0 ? '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">' +
+          '<span style="font-size:12px;color:#cbd5e1;">매장 1개 커버</span>' +
+          '<span style="font-size:14px;color:#fff;font-family:DM Mono,monospace;">' + formatPop(popPerStore) + '<span style="color:#cbd5e1;font-size:12px;">명</span></span>' +
+        '</div>' : '') +
       '</div>' : '') +
       '</div>';
   });
@@ -1474,17 +1498,17 @@ function toggleBrandDetail(brand, region) {
 
   var maxS25 = storeList.length > 0 && storeList[0].sales ? storeList[0].sales.s25 : 1;
 
-  var html = '<div style="margin-top:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:320px;overflow-y:auto;">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
-      '<span style="font-size:12px;font-weight:700;color:' + bc + ';">' + brand + ' 매장별 매출</span>' +
-      '<span style="font-size:10px;color:var(--text-dim);">' + storeList.length + '개</span>' +
+  var html = '<div style="margin-top:14px;padding:18px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;max-height:520px;overflow-y:auto;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
+      '<span style="font-size:16px;font-weight:700;color:' + bc + ';">' + brand + ' 매장별 매출</span>' +
+      '<span style="font-size:13px;color:#cbd5e1;">' + storeList.length + '개 매장</span>' +
     '</div>';
 
   storeList.forEach(function(r, idx) {
     var s25 = (r.sales && r.sales.s25 > 0) ? r.sales.s25 : 0;
     var s24 = (r.sales && r.sales.s24 > 0) ? r.sales.s24 : 0;
     var changePct = s24 > 0 ? ((s25 - s24) / s24 * 100).toFixed(1) : '-';
-    var changeColor = 'var(--text-dim)';
+    var changeColor = '#94a3b8';
     var changeSign = '';
     if (changePct !== '-') {
       changeColor = parseFloat(changePct) >= 0 ? '#34d399' : '#f87171';
@@ -1492,16 +1516,16 @@ function toggleBrandDetail(brand, region) {
     }
     var barW = maxS25 > 0 ? (s25 / maxS25 * 100) : 0;
 
-    html += '<div style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="selectStore(' + r.store.id + ')">' +
+    html += '<div style="padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="selectStore(' + r.store.id + ')">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<span style="font-size:11px;color:var(--text);font-weight:500;">' + displayName(r.store) + '</span>' +
-        '<span style="font-size:10px;font-weight:600;color:' + changeColor + ';">' + (changePct !== '-' ? changeSign + changePct + '%' : '') + '</span>' +
+        '<span style="font-size:14px;color:#fff;font-weight:600;">' + displayName(r.store) + '</span>' +
+        '<span style="font-size:13px;font-weight:700;color:' + changeColor + ';">' + (changePct !== '-' ? changeSign + changePct + '%' : '') + '</span>' +
       '</div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">' +
-        '<span style="font-size:9px;color:var(--text-dim);font-family:DM Mono,monospace;">\'24 ' + (s24 > 0 ? formatSales(s24) : '-') + '</span>' +
-        '<span style="font-size:11px;font-family:DM Mono,monospace;color:var(--text);">' + (s25 > 0 ? formatSales(s25) : '-') + '</span>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">' +
+        '<span style="font-size:12px;color:#cbd5e1;font-family:DM Mono,monospace;">\'24 ' + (s24 > 0 ? formatSales(s24) : '-') + '</span>' +
+        '<span style="font-size:15px;font-weight:600;font-family:DM Mono,monospace;color:#fff;">' + (s25 > 0 ? formatSales(s25) : '-') + '</span>' +
       '</div>' +
-      '<div style="height:3px;background:var(--border);border-radius:2px;margin-top:3px;"><div style="height:100%;width:' + barW + '%;background:' + bc + ';border-radius:2px;"></div></div>' +
+      '<div style="height:5px;background:var(--border);border-radius:3px;margin-top:6px;"><div style="height:100%;width:' + barW + '%;background:' + bc + ';border-radius:3px;"></div></div>' +
     '</div>';
   });
 
