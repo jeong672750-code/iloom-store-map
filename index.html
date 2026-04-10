@@ -869,38 +869,38 @@ function drawDistrictBoundaries(region) {
   clearDistrictBoundaries();
   if (region === '전체' || typeof DISTRICT_BOUNDARIES === 'undefined') return;
   var districts = DISTRICT_BOUNDARIES.filter(function(d) { return d.sido === region; });
-  if (districts.length === 0) return;
+  if (districts.length === 0) { console.warn('경계 데이터 없음:', region); return; }
+  console.log('경계 그리기:', region, districts.length + '개');
 
   districts.forEach(function(d) {
-    // MultiPolygon: coords = [[[ring1], [ring2]], ...]
-    // Polygon: coords = [[ring1], [ring2]]
     var polys = d.type === 'MultiPolygon' ? d.coords : [d.coords];
     polys.forEach(function(poly) {
-      // poly = [outer_ring, hole1, hole2, ...]
-      var outer = poly[0]; // outer ring only (구멍 무시)
+      var outer = poly[0];
+      if (!outer || outer.length < 3) return;
       if (mapEngine === 'kakao' && mapObj) {
         var path = outer.map(function(c) { return new kakao.maps.LatLng(c[1], c[0]); });
         var polygon = new kakao.maps.Polygon({
+          map: mapObj,
           path: path,
-          strokeWeight: 2,
-          strokeColor: '#3b82f6',
-          strokeOpacity: 0.9,
+          strokeWeight: 3,
+          strokeColor: '#1d4ed8',
+          strokeOpacity: 1,
           strokeStyle: 'solid',
           fillColor: '#3b82f6',
-          fillOpacity: 0.12,
-          map: mapObj
+          fillOpacity: 0.2
         });
         districtPolygons.push(polygon);
       } else if (mapEngine === 'leaflet' && mapObj) {
         var latlngs = outer.map(function(c) { return [c[1], c[0]]; });
         var polygon = L.polygon(latlngs, {
-          color: '#3b82f6', weight: 2, opacity: 0.9,
-          fillColor: '#3b82f6', fillOpacity: 0.12
+          color: '#1d4ed8', weight: 3, opacity: 1,
+          fillColor: '#3b82f6', fillOpacity: 0.2
         }).addTo(mapObj);
         districtPolygons.push(polygon);
       }
     });
   });
+  console.log('생성된 폴리곤:', districtPolygons.length);
 }
 
 function setFilter(region) {
