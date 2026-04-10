@@ -64,7 +64,7 @@
   }
   .main { display: flex; flex: 1; overflow: hidden; }
   .sidebar {
-    width: 300px; background: var(--surface); border-right: 1px solid var(--border);
+    width: 360px; background: var(--surface); border-right: 1px solid var(--border);
     display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
   }
   .sidebar-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
@@ -99,17 +99,17 @@
   }
   .store-item:hover { background: var(--surface2); border-left-color: var(--accent2); }
   .store-item.active { background: var(--surface2); border-left-color: var(--accent); }
-  .store-num { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-dim); min-width: 22px; padding-top: 2px; }
+  .store-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); min-width: 24px; padding-top: 2px; }
   .store-info { flex: 1; min-width: 0; }
-  .store-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+  .store-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
   .stype-tag {
-    font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 600; flex-shrink: 0;
+    font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; flex-shrink: 0;
   }
   .stype-tag.direct { background: rgba(52,211,153,0.15); color: #34d399; }
   .stype-tag.dealer { background: rgba(251,191,36,0.15); color: #fbbf24; }
-  .store-addr { font-size: 11px; color: var(--text-muted); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .store-addr { font-size: 12px; color: var(--text-muted); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .store-region-tag {
-    font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--surface2);
+    font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--surface2);
     color: var(--text-dim); border: 1px solid var(--border); flex-shrink: 0; margin-top: 2px;
   }
   .map-container { flex: 1; position: relative; overflow: hidden; }
@@ -277,9 +277,9 @@
   .legend-circle { border-radius: 50%; flex-shrink: 0; }
   /* 지역 대시보드 - 좌측 세로 패널 (flex 항목, 지도 옆) */
   .region-dashboard {
-    width: 1080px; flex-shrink: 0;
+    width: 880px; flex-shrink: 0;
     background: var(--surface); border-right: 1px solid var(--border);
-    padding: 28px 32px 28px 32px; display: none;
+    padding: 22px 26px 22px 26px; display: none;
     overflow-y: auto;
     position: relative;
   }
@@ -288,24 +288,24 @@
   .region-dashboard::-webkit-scrollbar-track { background: transparent; }
   .region-dashboard::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   .region-dashboard-close {
-    position: absolute; top: 18px; right: 18px; width: 32px; height: 32px;
+    position: absolute; top: 16px; right: 16px; width: 28px; height: 28px;
     border-radius: 50%; background: var(--surface2); border: 1px solid var(--border);
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    color: var(--text-muted); font-size: 16px;
+    color: var(--text-muted); font-size: 14px;
   }
   .region-dashboard-close:hover { background: var(--border); }
-  .rd-header { font-size: 22px; font-weight: 700; margin-bottom: 8px; padding-right: 40px; }
-  .rd-pop-line { font-size: 15px; color: #cbd5e1; margin-bottom: 22px; padding-right: 40px; }
-  .rd-pop-line strong { color: #fff; font-family: 'DM Mono', monospace; font-size: 17px; }
-  .rd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .rd-header { font-size: 20px; font-weight: 700; margin-bottom: 6px; padding-right: 36px; }
+  .rd-pop-line { font-size: 14px; color: #cbd5e1; margin-bottom: 18px; padding-right: 36px; }
+  .rd-pop-line strong { color: #fff; font-family: 'DM Mono', monospace; font-size: 16px; }
+  .rd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .rd-card {
     background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 20px 22px; text-align: left;
+    border-radius: 10px; padding: 14px 16px; text-align: left;
   }
-  .rd-brand { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-  .rd-count { font-size: 32px; font-weight: 700; font-family: 'DM Mono', monospace; }
-  .rd-sales { font-size: 15px; color: var(--text-muted); margin-top: 4px; }
-  .rd-bar-wrap { margin-top: 10px; height: 6px; background: var(--border); border-radius: 3px; }
+  .rd-brand { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .rd-count { font-size: 30px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .rd-sales { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+  .rd-bar-wrap { margin-top: 8px; height: 5px; background: var(--border); border-radius: 3px; }
   .rd-bar { height: 100%; border-radius: 3px; }
   /* 공백 분석 */
   .gap-sub-tab {
@@ -1405,14 +1405,14 @@ function showRegionDashboard(region) {
   var totalChangeSign = totalS25 >= totalS24 ? '+' : '';
   html += '<div class="rd-card" style="border-color:var(--border);">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-      '<div style="font-size:16px;font-weight:700;color:#e2e8f0;">전체</div>' +
-      '<div style="font-size:32px;font-weight:700;font-family:DM Mono,monospace;color:#fff;">' + totalStores + '<span style="font-size:14px;font-weight:400;color:#cbd5e1;">개</span></div>' +
+      '<div style="font-size:15px;font-weight:700;color:#e2e8f0;">전체</div>' +
+      '<div style="font-size:28px;font-weight:700;font-family:DM Mono,monospace;color:#fff;">' + totalStores + '<span style="font-size:13px;font-weight:400;color:#cbd5e1;">개</span></div>' +
     '</div>' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">' +
-      '<div style="font-size:14px;color:#cbd5e1;">\'24 <span style="color:#e2e8f0;">' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</span></div>' +
-      '<div style="font-size:18px;font-weight:600;color:#fff;">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
+      '<div style="font-size:13px;color:#cbd5e1;">\'24 <span style="color:#e2e8f0;">' + (totalS24 > 0 ? formatSales(totalS24) : '-') + '</span></div>' +
+      '<div style="font-size:17px;font-weight:600;color:#fff;">\'25 ' + (totalS25 > 0 ? formatSales(totalS25) : '-') + '</div>' +
     '</div>' +
-    (totalS24 > 0 ? '<div style="text-align:right;font-size:14px;font-weight:600;margin-top:4px;' + totalChangeStyle + '">' + totalChangeSign + totalChange + '% YoY</div>' : '') +
+    (totalS24 > 0 ? '<div style="text-align:right;font-size:13px;font-weight:600;margin-top:3px;' + totalChangeStyle + '">' + totalChangeSign + totalChange + '% YoY</div>' : '') +
     '</div>';
 
   // 브랜드별 카드 (클릭 시 매장별 상세)
@@ -1436,28 +1436,28 @@ function showRegionDashboard(region) {
       effRankBadge = '<span style="display:inline-block;background:' + rankColors[effRank] + ';color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">효율 ' + (effRank + 1) + '위</span>';
     }
 
-    html += '<div class="rd-card" style="border-left:5px solid ' + bc + ';cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
+    html += '<div class="rd-card" style="border-left:4px solid ' + bc + ';cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
       // 헤더: 브랜드명 + 매장수
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<div style="font-size:18px;font-weight:700;color:' + bc + ';">' + b + ' <span style="font-size:13px;color:#fff;">▼</span></div>' +
-        '<div style="font-size:32px;font-weight:700;font-family:DM Mono,monospace;color:#fff;">' + d.count + '<span style="font-size:14px;font-weight:400;color:#cbd5e1;">개</span></div>' +
+        '<div style="font-size:17px;font-weight:700;color:' + bc + ';">' + b + ' <span style="font-size:12px;color:#fff;">▼</span></div>' +
+        '<div style="font-size:28px;font-weight:700;font-family:DM Mono,monospace;color:#fff;">' + d.count + '<span style="font-size:13px;font-weight:400;color:#cbd5e1;">개</span></div>' +
       '</div>' +
       // 매출
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">' +
-        '<div style="font-size:14px;color:#cbd5e1;">\'24 <span style="color:#e2e8f0;">' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</span></div>' +
-        '<div style="font-size:18px;font-weight:600;color:#fff;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
+        '<div style="font-size:13px;color:#cbd5e1;">\'24 <span style="color:#e2e8f0;">' + (d.s24 > 0 ? formatSales(d.s24) : '-') + '</span></div>' +
+        '<div style="font-size:17px;font-weight:600;color:#fff;">\'25 ' + (d.s25 > 0 ? formatSales(d.s25) : '-') + '</div>' +
       '</div>' +
-      (d.s24 > 0 ? '<div style="text-align:right;font-size:14px;font-weight:600;margin-top:4px;' + changeStyle + '">' + changeSign + change + '% YoY</div>' : '') +
+      (d.s24 > 0 ? '<div style="text-align:right;font-size:13px;font-weight:600;margin-top:3px;' + changeStyle + '">' + changeSign + change + '% YoY</div>' : '') +
       // 점유율 바
-      '<div class="rd-bar-wrap" style="margin-top:10px;"><div class="rd-bar" style="width:' + salesPct + '%;background:' + bc + ';"></div></div>' +
-      '<div style="font-size:13px;color:#e2e8f0;margin-top:5px;text-align:right;">점유 <strong style="color:#fff;">' + share + '%</strong></div>' +
-      // 핵심 지표: 매장당 매출 (가장 직관적)
-      (perStore > 0 ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">' +
+      '<div class="rd-bar-wrap" style="margin-top:8px;"><div class="rd-bar" style="width:' + salesPct + '%;background:' + bc + ';"></div></div>' +
+      '<div style="font-size:12px;color:#e2e8f0;margin-top:4px;text-align:right;">점유 <strong style="color:#fff;">' + share + '%</strong></div>' +
+      // 핵심 지표: 매장당 매출
+      (perStore > 0 ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<span style="font-size:13px;color:#e2e8f0;">매장당 매출' + effRankBadge + '</span>' +
-          '<span style="font-size:18px;font-weight:700;color:#fff;font-family:DM Mono,monospace;">' + formatSales(perStore) + '</span>' +
+          '<span style="font-size:17px;font-weight:700;color:#fff;font-family:DM Mono,monospace;">' + formatSales(perStore) + '</span>' +
         '</div>' +
-        (popPerStore > 0 ? '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">' +
+        (popPerStore > 0 ? '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">' +
           '<span style="font-size:12px;color:#cbd5e1;">매장 1개 커버</span>' +
           '<span style="font-size:14px;color:#fff;font-family:DM Mono,monospace;">' + formatPop(popPerStore) + '<span style="color:#cbd5e1;font-size:12px;">명</span></span>' +
         '</div>' : '') +
