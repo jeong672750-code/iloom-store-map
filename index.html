@@ -1503,9 +1503,11 @@ function switchBrandTab(brand, region, tab) {
 function renderBrandDetail(brand, region, tab) {
   var area = document.getElementById('brandDetailArea');
   var bc = BRAND_COLORS[brand] || '#888';
+  var isAll = (region === '전체');
   tab = tab || 'sales';
+  // 지역 필터링 중에는 매장 기준/변경 이력 탭 비활성 → 강제로 sales
+  if (!isAll && tab !== 'sales') tab = 'sales';
 
-  // 탭 헤더
   function tabBtn(name, label) {
     var active = tab === name;
     return '<span onclick="switchBrandTab(\'' + brand + '\',\'' + region + '\',\'' + name + '\')" style="padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;' +
@@ -1515,8 +1517,8 @@ function renderBrandDetail(brand, region, tab) {
   var header = '<div style="margin-top:14px;padding:18px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;">' +
     '<div style="display:flex;gap:6px;margin-bottom:14px;">' +
       tabBtn('sales', '매장별 매출') +
-      tabBtn('criteria', '포함 기준') +
-      tabBtn('history', '변경 이력') +
+      (isAll ? tabBtn('criteria', '매장 기준') : '') +
+      (isAll ? tabBtn('history', '변경 이력') : '') +
     '</div>';
 
   var body = '';
