@@ -1,0 +1,45 @@
+name: 매장 업데이트 적용
+
+on:
+  workflow_dispatch:
+    inputs:
+      month:
+        description: '반영할 월 (예: 2026-05). pending/{월} 브랜치에서 가져옴'
+        required: true
+        type: string
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: pending 브랜치에서 검토된 변경사항 가져오기
+        run: |
+          git fetch origin "pending/${{ inputs.month }}"
+          git checkout "origin/pending/${{ inputs.month }}" -- pending_changes.json
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 변경사항 적용
+        run: node apply_stores.js
+
+      - name: deploy 폴더에 복사
+        run: cp competitors_data.js deploy/
+
+      - name: 커밋 + 푸시
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add competitors_data.js deploy/competitors_data.js
+          git commit -m "${{ inputs.month }} 매장 업데이트 적용"
+          git push origin main

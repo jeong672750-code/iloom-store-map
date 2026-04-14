@@ -1,0 +1,60 @@
+name: 매월 매장 크롤링
+
+on:
+  schedule:
+    # 매월 1~7일 매일 21:00 UTC = 06:00 KST 트리거
+    # 스크립트가 그 중 첫 영업일에만 실제 작업 수행
+    - cron: '0 21 1-7 * *'
+  workflow_dispatch:  # 수동 트리거 허용 (테스트용)
+
+jobs:
+  crawl-and-report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 첫 영업일 확인
+        id: check
+        run: node scripts/is_first_biz_day.js
+
+      - name: 의존성 설치
+        if: steps.check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
+        run: npm install
+
+      - name: 5개 브랜드 크롤링
+        if: steps.check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
+        run: node crawlers/run_all.js
+
+      - name: 변경사항 분석
+        if: steps.check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
+        run: node diff_stores.js crawled.json
+
+      - name: pending 결과 브랜치에 커밋
+        if: steps.check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="pending/${{ steps.check.outputs.month }}"
+          git checkout -b "$BRANCH"
+          git add diff_report.md pending_changes.json crawled.json
+          git commit -m "자동 크롤링: ${{ steps.check.outputs.month }} (검토 대기)"
+          git push --force origin "$BRANCH"
+
+      - name: GitHub Issue 생성 (검토 요청)
+        if: steps.check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "📋 ${{ steps.check.outputs.month }} 매장 업데이트 검토"
+          content-filepath: ./diff_report.md
+          labels: |
+            monthly-update
+            review-needed

@@ -1,2 +1,14 @@
 # Local Netlify folder
 .netlify
+
+# Node
+node_modules/
+package-lock.json
+
+# 크롤링 임시 결과 (커밋되지 않음, 워크플로우에서 생성)
+*_out.json
+crawled.json
+diff_report.md
+pending_changes.json
+applied_*.json
+competitors_data.backup.*.js

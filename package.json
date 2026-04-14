@@ -1,0 +1,12 @@
+{
+  "name": "iloom-store-crawler",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "crawl": "node crawlers/run_all.js",
+    "diff": "node diff_stores.js crawled.json"
+  },
+  "dependencies": {
+    "puppeteer": "^24.40.0"
+  }
+}
