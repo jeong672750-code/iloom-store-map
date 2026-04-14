@@ -17,7 +17,7 @@ var BRAND_CRITERIA = {
     },
 
     '리바트': {
-      count: 92,
+      count: 91,
       source: '현대리바트 공식몰 (hyundailivart.co.kr)',
       filterType: '가구 카테고리 (shopScnCd 01 + 20 + 60 + 80 = 100개)',
       officialCount: 100,
@@ -67,7 +67,8 @@ var BRAND_HISTORY = [
     date: '2026-04-15',
     summary: '공식몰 재검증 + 중복 매장 정리',
     events: [
-      { brand: '한샘', type: 'blocked', name: 'INT부천위탁유통_오늘의집대리점', reason: '"부천중동대리점"과 동일 주소 - 중복이므로 미등록' }
+      { brand: '한샘', type: 'blocked', name: 'INT부천위탁유통_오늘의집대리점', reason: '"부천중동대리점"과 동일 주소 - 중복이므로 미등록' },
+      { brand: '리바트', type: 'removed', name: '현대리바트 송도점 / 리바트토탈 송도 현대프리미엄 아울렛 → "리바트토탈 송도 현대프리미엄아울렛점"(직영)으로 병합', reason: '같은 주소 중복 매장 통합 + 공식 shopTypeCd=01 반영 (직영)' }
     ]
   },
   {
