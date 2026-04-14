@@ -36,7 +36,7 @@ var BRAND_CRITERIA = {
     },
 
     '까사미아': {
-      count: 106,
+      count: 108,
       source: '까사미아 공식몰 (casamiamall.com)',
       filterType: '전체 매장 (대리점 + 직영점 + 기타유통)',
       officialCount: 134,
@@ -45,7 +45,8 @@ var BRAND_CRITERIA = {
         { name: '굳닷컴 쇼룸 서래마을점', reason: 'GUUD 쇼룸', type: 'blocklist' },
         { name: '카르페디엠베드 신세계강남점', reason: '매트리스 전문', type: 'blocklist' },
         { name: '팩토리아울렛 용인점', reason: '자체 아울렛', type: 'blocklist' },
-        { name: '아울렛울산대리점', reason: '자체 아울렛 (울산)', type: 'blocklist' }
+        { name: '아울렛울산대리점', reason: '자체 아울렛 (울산)', type: 'blocklist' },
+        { name: '아울렛 기흥대리점', reason: '자체 아울렛 (기흥)', type: 'blocklist' }
       ],
       notes: '자체 아울렛("아울렛"으로 시작) 자동 제외. 백화점 입점 아울렛(신세계사이먼/현대/롯데)은 포함.'
     },
@@ -65,8 +66,11 @@ var BRAND_CRITERIA = {
 var BRAND_HISTORY = [
   {
     date: '2026-04-15',
-    summary: '공식몰 재검증 + 중복 매장 정리',
+    summary: '공식몰 4개 브랜드 크롤링 + 데이터 정리',
     events: [
+      { brand: '까사미아', type: 'added', name: '까사미아 롯데아울렛고양점', reason: '공식몰 신규 확인 (롯데아울렛 고양점 입점)' },
+      { brand: '까사미아', type: 'added', name: '까사미아 신세계프리미엄아울렛 부산점', reason: '공식몰 신규 확인 (기존 신세계사이먼부산아울렛점 → 명칭 변경 후 등록)' },
+      { brand: '까사미아', type: 'blocked', name: '아울렛 기흥대리점', reason: '자체 아울렛 — 블랙리스트 추가' },
       { brand: '한샘', type: 'blocked', name: 'INT부천위탁유통_오늘의집대리점', reason: '"부천중동대리점"과 동일 주소 - 중복이므로 미등록' },
       { brand: '리바트', type: 'removed', name: '현대리바트 송도점 / 리바트토탈 송도 현대프리미엄 아울렛 → "리바트토탈 송도 현대프리미엄아울렛점"(직영)으로 병합', reason: '같은 주소 중복 매장 통합 + 공식 shopTypeCd=01 반영 (직영)' }
     ]
