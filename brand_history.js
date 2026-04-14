@@ -5,6 +5,17 @@ var BRAND_CRITERIA = {
   lastUpdated: '2026-04-15',
 
   brands: {
+    '일룸': {
+      count: 75,
+      source: '일룸 공식 (iloom.com/store/storeListForMap.do)',
+      filterType: '전체 매장 (P=프리미엄샵 + B=일반)',
+      officialCount: 76,
+      excluded: [
+        { name: '청남가구단지점 / 청남3', reason: '내부 명명 차이 (같은 매장)', type: 'duplicate' }
+      ],
+      notes: '내부 매장명은 매출 데이터(sales_data.js) 매칭용으로 짧은 이름+숫자 형태. UI 표시는 displayName()이 끝의 숫자 제거 + "점" 추가.'
+    },
+
     '한샘': {
       count: 63,
       source: '한샘 공식몰 (remodeling.hanssem.com)',
@@ -66,8 +77,12 @@ var BRAND_CRITERIA = {
 var BRAND_HISTORY = [
   {
     date: '2026-04-15',
-    summary: '공식몰 4개 브랜드 크롤링 + 데이터 정리',
+    summary: '공식몰 5개 브랜드 크롤링 + 데이터 정리',
     events: [
+      { brand: '일룸', type: 'removed', name: '포항점', reason: '공식 사이트에서 폐점 확인' },
+      { brand: '일룸', type: 'removed', name: '대전도안점', reason: '공식 사이트에서 폐점 확인' },
+      { brand: '일룸', type: 'removed', name: '천안불당점', reason: '공식 사이트에서 폐점 확인' },
+      { brand: '일룸', type: 'removed', name: '롯데몰여수점(팝업)', reason: '팝업 매장 종료' },
       { brand: '까사미아', type: 'added', name: '까사미아 롯데아울렛고양점', reason: '공식몰 신규 확인 (롯데아울렛 고양점 입점)' },
       { brand: '까사미아', type: 'added', name: '까사미아 신세계프리미엄아울렛 부산점', reason: '공식몰 신규 확인 (기존 신세계사이먼부산아울렛점 → 명칭 변경 후 등록)' },
       { brand: '까사미아', type: 'blocked', name: '아울렛 기흥대리점', reason: '자체 아울렛 — 블랙리스트 추가' },
