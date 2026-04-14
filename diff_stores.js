@@ -17,9 +17,24 @@ if (!newDataPath) {
 var blocklistCode = fs.readFileSync(path.join(__dirname, 'removed_stores.js'), 'utf8');
 eval(blocklistCode);
 
-// 기존 데이터 로드
+// 기존 데이터 로드 (경쟁사)
 var existingCode = fs.readFileSync(path.join(__dirname, 'competitors_data.js'), 'utf8');
 eval(existingCode);
+
+// 일룸 데이터 로드 (iloom_store_map.html 하드코딩)
+var iloomHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+var iloomMatches = iloomHtml.matchAll(/\{\s*name:\s*"([^"]+)",\s*addr:\s*"([^"]*)",\s*lat:\s*([0-9.]+),\s*lng:\s*([0-9.]+)\s*\}/g);
+for (var m of iloomMatches) {
+  COMPETITORS_RAW.push({
+    brand: '일룸',
+    name: m[1],
+    addr: m[2],
+    lat: parseFloat(m[3]),
+    lng: parseFloat(m[4]),
+    stype: '직영'
+  });
+}
+console.log('일룸 매장 로드:', COMPETITORS_RAW.filter(s => s.brand === '일룸').length + '개');
 
 // 신규 크롤링 데이터
 var newData = JSON.parse(fs.readFileSync(newDataPath, 'utf8'));
