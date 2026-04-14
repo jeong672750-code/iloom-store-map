@@ -2,7 +2,7 @@
 // 매월 업데이트 시 이 파일도 함께 갱신
 
 var BRAND_CRITERIA = {
-  lastUpdated: '2026-04-14',
+  lastUpdated: '2026-04-15',
 
   brands: {
     '한샘': {
@@ -11,7 +11,7 @@ var BRAND_CRITERIA = {
       filterType: '가구 카테고리 (itemTypes=FN)',
       officialCount: 64,
       excluded: [
-        { name: 'INT부천위탁유통_오늘의집대리점', reason: '오늘의집 위탁 매장 (삼성전자 부천중동점 내)', type: 'blocklist' }
+        { name: 'INT부천위탁유통_오늘의집대리점', reason: '"부천중동대리점"과 동일 주소 (경기 부천시 원미구 길주로 254) - 중복 매장이므로 미등록', type: 'duplicate' }
       ],
       notes: '디자인파크/리하우스/플래그십 포함. 리하우스 신규 추가 시 수기 확인 필요.'
     },
@@ -64,12 +64,18 @@ var BRAND_CRITERIA = {
 // 월별 변경 이력
 var BRAND_HISTORY = [
   {
+    date: '2026-04-15',
+    summary: '공식몰 재검증 + 중복 매장 정리',
+    events: [
+      { brand: '한샘', type: 'blocked', name: 'INT부천위탁유통_오늘의집대리점', reason: '"부천중동대리점"과 동일 주소 - 중복이므로 미등록' }
+    ]
+  },
+  {
     date: '2026-04-14',
     summary: '초기 데이터 정리 + 자동 업데이트 체계 구축',
     events: [
       { brand: '리바트', type: 'added', name: '스타필드 고양점', reason: '공식몰 확인 신규 추가' },
       { brand: '에몬스', type: 'removed', name: '금호월드점', reason: '공식몰에서 폐점 확인' },
-      { brand: '한샘', type: 'blocked', name: 'INT부천위탁유통_오늘의집대리점', reason: '오늘의집 위탁매장 — 블랙리스트' },
       { brand: '리바트', type: 'blocked', name: '리바트 용인점 / 리바트 상설할인점', reason: '상설 할인매장 — 블랙리스트' }
     ]
   }
