@@ -3,7 +3,10 @@ var puppeteer = require('puppeteer');
 
 async function crawlEmons() {
   console.log('[에몬스] 크롤링 시작...');
-  var browser = await puppeteer.launch({ headless: 'new' });
+  var browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  });
   var page = await browser.newPage();
 
   // 1. 전체 리스트 페이지 돌면서 매장 seq 수집

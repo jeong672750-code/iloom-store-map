@@ -12,16 +12,30 @@ var crawlers = {
 
 (async () => {
   var all = [];
+  var failed = [];
   for (var brand of Object.keys(crawlers)) {
     try {
       var result = await crawlers[brand]();
-      all = all.concat(result);
-      console.log('✓', brand, result.length + '개');
+      if (!result || result.length === 0) {
+        failed.push(brand + ' (0건 반환)');
+        console.error('✗', brand, '0건 반환 — 실패로 처리');
+      } else {
+        all = all.concat(result);
+        console.log('✓', brand, result.length + '개');
+      }
     } catch (e) {
+      failed.push(brand + ' (' + e.message + ')');
       console.error('✗', brand, '실패:', e.message);
+      console.error(e.stack);
     }
   }
   fs.writeFileSync(__dirname + '/../crawled.json', JSON.stringify(all, null, 2));
   console.log('\n총:', all.length + '개 → crawled.json');
+
+  if (failed.length > 0) {
+    console.error('\n❌ 실패한 브랜드:', failed.length + '개');
+    failed.forEach(f => console.error('  -', f));
+    process.exit(1); // 워크플로우 fail
+  }
   console.log('다음: node diff_stores.js crawled.json');
 })();

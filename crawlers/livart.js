@@ -9,7 +9,10 @@ var FURNITURE_SCN_CD = ['01', '20', '80', '60'];
 
 async function crawlLivart() {
   console.log('[리바트] 크롤링 시작...');
-  var browser = await puppeteer.launch({ headless: 'new' });
+  var browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  });
   var page = await browser.newPage();
 
   // 매장 찾기 페이지 방문 (세션 쿠키 + CSRF 토큰 확보)

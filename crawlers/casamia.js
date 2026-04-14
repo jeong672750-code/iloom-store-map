@@ -3,7 +3,10 @@ var puppeteer = require('puppeteer');
 
 async function crawlCasamia() {
   console.log('[까사미아] 크롤링 시작...');
-  var browser = await puppeteer.launch({ headless: 'new' });
+  var browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  });
   var page = await browser.newPage();
   await page.goto('https://www.casamiamall.com/customer/storeInformation', { waitUntil: 'networkidle0', timeout: 60000 });
 
