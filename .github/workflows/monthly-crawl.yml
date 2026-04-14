@@ -26,9 +26,13 @@ jobs:
         id: check
         run: node scripts/is_first_biz_day.js
 
-      - name: 의존성 설치
+      - name: 의존성 설치 (Puppeteer 포함)
         if: steps.check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
-        run: npm install
+        run: |
+          npm install
+          # Puppeteer Chromium 설치 (Ubuntu 의존성)
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2t64 || true
 
       - name: 5개 브랜드 크롤링
         if: steps.check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
@@ -45,7 +49,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           BRANCH="pending/${{ steps.check.outputs.month }}"
           git checkout -b "$BRANCH"
-          git add diff_report.md pending_changes.json crawled.json
+          # .gitignore에 들어있는 파일들 강제 추가 (-f)
+          git add -f diff_report.md pending_changes.json crawled.json
           git commit -m "자동 크롤링: ${{ steps.check.outputs.month }} (검토 대기)"
           git push --force origin "$BRANCH"
 

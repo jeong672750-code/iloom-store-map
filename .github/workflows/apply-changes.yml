@@ -23,7 +23,9 @@ jobs:
       - name: pending 브랜치에서 검토된 변경사항 가져오기
         run: |
           git fetch origin "pending/${{ inputs.month }}"
+          # .gitignore된 파일도 강제로 가져오기
           git checkout "origin/pending/${{ inputs.month }}" -- pending_changes.json
+          ls -la pending_changes.json
 
       - name: Node.js 설정
         uses: actions/setup-node@v4
