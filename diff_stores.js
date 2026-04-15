@@ -78,14 +78,29 @@ function coordKey(brand, lat, lng) {
   return brand + '|' + lat.toFixed(3) + ',' + lng.toFixed(3);
 }
 
+// 두 매장이 200m 이내면 같은 매장으로 간주 (반올림 경계 문제 회피)
+function haversineKm(lat1, lng1, lat2, lng2) {
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+var COORD_MATCH_KM = 0.2; // 200m
+function findByCoord(brand, lat, lng, pool) {
+  for (var i = 0; i < pool.length; i++) {
+    var p = pool[i];
+    if (p.brand === brand && p.lat && p.lng && haversineKm(lat, lng, p.lat, p.lng) < COORD_MATCH_KM) return p;
+  }
+  return null;
+}
+
 // ═══════════════════════════════════════════════
 // 기존 데이터 인덱싱
 // ═══════════════════════════════════════════════
 var existingByKey = {};
-var existingByCoord = {};
 COMPETITORS_RAW.forEach(function(s) {
   existingByKey[s.brand + '|' + normalize(s.name)] = s;
-  if (s.lat && s.lng) existingByCoord[coordKey(s.brand, s.lat, s.lng)] = s;
 });
 
 // ═══════════════════════════════════════════════
@@ -95,7 +110,7 @@ var toAdd = [];       // 신규 추가 (사람 승인 필요)
 var blocked = [];     // 블랙리스트 제외 (자동)
 var manualCheck = []; // 수기 확인 필요 (한샘 리하우스 등)
 var unchanged = [];   // 기존과 동일
-var newKeySet = {};
+var newList = [];
 
 newData.forEach(function(s) {
   // 이름 정리 + stype 분류 먼저 적용
@@ -114,8 +129,7 @@ newData.forEach(function(s) {
   };
 
   var key = s.brand + '|' + normalize(cleanedName);
-  newKeySet[key] = true;
-  if (s.lat && s.lng) newKeySet[coordKey(s.brand, s.lat, s.lng)] = true;
+  newList.push(normalized);
 
   // 블랙리스트 검사 (자동 제외)
   if (isBlocked(s.brand, cleanedName)) {
@@ -134,8 +148,11 @@ newData.forEach(function(s) {
     }
   }
 
-  // 기존 존재 여부
-  var matched = existingByKey[key] || (s.lat && s.lng && existingByCoord[coordKey(s.brand, s.lat, s.lng)]);
+  // 기존 존재 여부 (이름 매칭 or 200m 이내 좌표 매칭)
+  var matched = existingByKey[key];
+  if (!matched && s.lat && s.lng) {
+    matched = findByCoord(s.brand, s.lat, s.lng, COMPETITORS_RAW);
+  }
   if (matched) {
     unchanged.push(normalized);
   } else {
@@ -147,11 +164,17 @@ newData.forEach(function(s) {
 // ═══════════════════════════════════════════════
 // 삭제된 매장 검출 (기존에 있지만 크롤링에 없음)
 // ═══════════════════════════════════════════════
+var newByKey = {};
+newList.forEach(function(s) {
+  newByKey[s.brand + '|' + normalize(s.name)] = s;
+});
 var toRemove = [];
 COMPETITORS_RAW.forEach(function(s) {
   var key = s.brand + '|' + normalize(s.name);
-  var hasMatch = newKeySet[key];
-  if (!hasMatch && s.lat && s.lng) hasMatch = newKeySet[coordKey(s.brand, s.lat, s.lng)];
+  var hasMatch = newByKey[key];
+  if (!hasMatch && s.lat && s.lng) {
+    hasMatch = findByCoord(s.brand, s.lat, s.lng, newList);
+  }
   if (!hasMatch) toRemove.push(s);
 });
 
