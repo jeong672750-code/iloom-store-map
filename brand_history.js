@@ -77,6 +77,14 @@ var BRAND_CRITERIA = {
 var BRAND_HISTORY = [
   {
     date: '2026-04-15',
+    summary: '자동화 첫 크롤링 결과 정리',
+    events: [
+      { brand: '일룸', type: 'blocked', name: '엄마의서재', reason: '가구 매장 아님 — 블랙리스트' },
+      { brand: '리바트', type: 'blocked', name: '현대리바트 송도점 (공식명)', reason: '우리는 "리바트토탈 송도 현대프리미엄아울렛점"으로 등록된 동일 매장' }
+    ]
+  },
+  {
+    date: '2026-04-15',
     summary: '공식몰 5개 브랜드 크롤링 + 데이터 정리',
     events: [
       { brand: '일룸', type: 'removed', name: '포항점', reason: '공식 사이트에서 폐점 확인' },
