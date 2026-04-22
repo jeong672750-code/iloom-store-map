@@ -1424,7 +1424,7 @@ function showRegionDashboard(region) {
 
   var html = '<div class="rd-header">' + title + '</div>';
   if (popTotal > 0) {
-    html += '<div class="rd-pop-line">인구 <strong>' + formatPop(popTotal) + '명</strong> · 세대 <strong>' + formatPop(hhTotal) + '</strong></div>';
+    html += '<div class="rd-pop-line">인구 <strong>' + formatPop(popTotal) + '명</strong> · 세대 <strong>' + formatPop(hhTotal) + '</strong> <span style="font-size:10px;color:#6b7280;font-weight:400;margin-left:6px;">출처: 통계청 \'24년 주민등록인구</span></div>';
   } else {
     html += '<div style="margin-bottom:14px;"></div>';
   }
