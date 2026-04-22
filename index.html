@@ -481,7 +481,8 @@
     <div class="heatmap-legend" id="heatmapLegend">
       <div class="legend-title">지역별 매출 성장률 (25/24)</div>
       <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#047857;border-radius:3px;"></div> +10% 이상</div>
-      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#6ee7b7;border-radius:3px;"></div> 0 ~ +10%</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#6ee7b7;border-radius:3px;"></div> +5% ~ +10%</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#93c5fd;border-radius:3px;"></div> 0 ~ +5%</div>
       <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#fbbf24;border-radius:3px;"></div> -5% ~ 0%</div>
       <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#fca5a5;border-radius:3px;"></div> -10% ~ -5%</div>
       <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#dc2626;border-radius:3px;"></div> -10% 미만</div>
@@ -1878,12 +1879,15 @@ function clearHeatmap() {
     else if (mapEngine === 'leaflet' && mapObj) mapObj.removeLayer(c);
   });
   heatmapCircles = [];
+  var tip = document.getElementById('growth-tooltip');
+  if (tip) tip.style.display = 'none';
 }
 
 function growthColor(pct, hasData) {
   if (!hasData) return '#4b5563';
   if (pct >= 10) return '#047857';    // 진녹 (+10% 이상)
-  if (pct >= 0)  return '#6ee7b7';    // 연녹 (0 ~ +10%)
+  if (pct >= 5)  return '#6ee7b7';    // 연녹 (+5 ~ +10%)
+  if (pct >= 0)  return '#93c5fd';    // 연한 파랑 (0 ~ +5%)
   if (pct >= -5) return '#fbbf24';    // 노랑 (-5 ~ 0%)
   if (pct >= -10) return '#fca5a5';   // 연빨 (-10 ~ -5%)
   return '#dc2626';                    // 진빨 (-10% 미만)
@@ -1905,12 +1909,40 @@ function drawHeatmap() {
     regionSales[s.region].count++;
   });
 
-  // 2) 각 시도 경계 폴리곤에 성장률 색상 칠하기
+  // 호버 툴팁 생성 (지도 위에 띄움)
+  var tip = document.getElementById('growth-tooltip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = 'growth-tooltip';
+    tip.style.cssText = 'position:absolute;z-index:500;pointer-events:none;display:none;padding:8px 12px;background:rgba(15,20,30,0.95);border:1px solid #4b5563;border-radius:6px;color:#fff;font-size:12px;line-height:1.5;font-family:Noto Sans KR,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,0.4);white-space:nowrap;';
+    document.getElementById('map').appendChild(tip);
+  }
+
+  var fmtSales = function(v) {
+    if (!v || v <= 0) return '-';
+    if (v >= 10000) return (v/10000).toFixed(1) + '조';
+    if (v >= 100) return (v/100).toFixed(1) + '억';
+    return v + '백만';
+  };
+
+  function buildTipHtml(regionName, rs, hasData, pct) {
+    var pctStr = hasData ? (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%' : '데이터 없음';
+    var pctColor = !hasData ? '#9ca3af' : (pct >= 0 ? '#34d399' : '#f87171');
+    var html = '<div style="font-weight:700;font-size:13px;margin-bottom:4px;">' + regionName + '</div>';
+    html += '<div>성장률 <strong style="color:' + pctColor + ';font-family:DM Mono,monospace;">' + pctStr + '</strong></div>';
+    if (hasData) {
+      html += '<div style="color:#cbd5e1;font-size:11px;margin-top:3px;">24년 ' + fmtSales(rs.s24) + ' → 25년 ' + fmtSales(rs.s25) + '</div>';
+    }
+    return html;
+  }
+
+  // 2) 각 시도 경계 폴리곤에 성장률 색상 칠하기 + 호버 이벤트
   DISTRICT_BOUNDARIES.forEach(function(d) {
     var rs = regionSales[d.sido];
     var hasData = rs && rs.s24 > 0 && rs.s25 > 0;
     var pct = hasData ? ((rs.s25 - rs.s24) / rs.s24 * 100) : 0;
     var color = growthColor(pct, hasData);
+    var tipHtml = buildTipHtml(d.sido, rs, hasData, pct);
     var polys = d.type === 'MultiPolygon' ? d.coords : [d.coords];
     polys.forEach(function(poly) {
       var outer = poly[0];
@@ -1922,6 +1954,21 @@ function drawHeatmap() {
           strokeWeight: 1, strokeColor: color, strokeOpacity: 0.6,
           fillColor: color, fillOpacity: 0.28
         });
+        kakao.maps.event.addListener(polygon, 'mouseover', function(ev) {
+          polygon.setOptions({ fillOpacity: 0.55 });
+          tip.innerHTML = tipHtml;
+          tip.style.display = 'block';
+        });
+        kakao.maps.event.addListener(polygon, 'mousemove', function(ev) {
+          var proj = mapObj.getProjection();
+          var pt = proj.containerPointFromCoords(ev.latLng);
+          tip.style.left = (pt.x + 14) + 'px';
+          tip.style.top = (pt.y + 14) + 'px';
+        });
+        kakao.maps.event.addListener(polygon, 'mouseout', function() {
+          polygon.setOptions({ fillOpacity: 0.28 });
+          tip.style.display = 'none';
+        });
         heatmapCircles.push(polygon);
       } else if (mapEngine === 'leaflet' && mapObj) {
         var latlngs = outer.map(function(c) { return [c[1], c[0]]; });
@@ -1929,6 +1976,20 @@ function drawHeatmap() {
           color: color, weight: 1, opacity: 0.6,
           fillColor: color, fillOpacity: 0.28
         }).addTo(mapObj);
+        polygon.on('mouseover', function(ev) {
+          polygon.setStyle({ fillOpacity: 0.55 });
+          tip.innerHTML = tipHtml;
+          tip.style.display = 'block';
+        });
+        polygon.on('mousemove', function(ev) {
+          var pt = mapObj.latLngToContainerPoint(ev.latlng);
+          tip.style.left = (pt.x + 14) + 'px';
+          tip.style.top = (pt.y + 14) + 'px';
+        });
+        polygon.on('mouseout', function() {
+          polygon.setStyle({ fillOpacity: 0.28 });
+          tip.style.display = 'none';
+        });
         heatmapCircles.push(polygon);
       }
     });
@@ -1974,6 +2035,13 @@ function switchView(view) {
     closePanel();
     closeCompare();
     closeRegionDashboard();
+    // 성장률 지도가 켜져 있으면 해제 (공백분석과 다른 컨텍스트)
+    if (heatmapActive) {
+      heatmapActive = false;
+      clearHeatmap();
+      document.getElementById('btnHeatmap').classList.remove('active');
+      document.getElementById('heatmapLegend').classList.remove('visible');
+    }
     gapActive = true;
     runCoverageAnalysis();
   } else {
