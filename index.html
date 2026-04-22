@@ -683,9 +683,12 @@ function makeMarkerSvg(color) {
 
 // Canvas로 PNG 마커 이미지 생성 (카카오용)
 var _markerPngCache = {};
-function makeMarkerPng(color) {
-  if (_markerPngCache[color]) return _markerPngCache[color];
-  var w = 28, h = 36;
+function makeMarkerPng(color, size) {
+  size = size || 'large';
+  var dims = { large: [28, 36], medium: [20, 26], small: [14, 18] }[size] || [28, 36];
+  var cacheKey = color + '_' + size;
+  if (_markerPngCache[cacheKey]) return _markerPngCache[cacheKey];
+  var w = dims[0], h = dims[1];
   var c = document.createElement('canvas'); c.width = w; c.height = h;
   var ctx = c.getContext('2d');
   // 핀 모양
@@ -698,15 +701,16 @@ function makeMarkerPng(color) {
   ctx.fillStyle = color;
   ctx.fill();
   ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = size === 'small' ? 1 : 1.5;
   ctx.stroke();
   // 중앙 흰 점
+  var dotR = size === 'small' ? 2.5 : (size === 'medium' ? 3.5 : 5);
   ctx.beginPath();
-  ctx.arc(w/2, w/2, 5, 0, Math.PI*2);
+  ctx.arc(w/2, w/2, dotR, 0, Math.PI*2);
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.fill();
-  _markerPngCache[color] = c.toDataURL('image/png');
-  return _markerPngCache[color];
+  _markerPngCache[cacheKey] = c.toDataURL('image/png');
+  return _markerPngCache[cacheKey];
 }
 
 function makeLeafletIcon(brand) {
@@ -754,15 +758,20 @@ function tryKakao() {
         center: new kakao.maps.LatLng(36.5, 127.8),
         level: 12
       });
-      var markerImages = {};
+      var markerImages = { large: {}, medium: {}, small: {} };
       Object.keys(BRAND_COLORS).forEach(function(b) {
-        var png = makeMarkerPng(BRAND_COLORS[b]);
-        markerImages[b] = new kakao.maps.MarkerImage(png, new kakao.maps.Size(28, 36), { offset: new kakao.maps.Point(14, 36) });
+        markerImages.large[b]  = new kakao.maps.MarkerImage(makeMarkerPng(BRAND_COLORS[b], 'large'),  new kakao.maps.Size(28, 36), { offset: new kakao.maps.Point(14, 36) });
+        markerImages.medium[b] = new kakao.maps.MarkerImage(makeMarkerPng(BRAND_COLORS[b], 'medium'), new kakao.maps.Size(20, 26), { offset: new kakao.maps.Point(10, 26) });
+        markerImages.small[b]  = new kakao.maps.MarkerImage(makeMarkerPng(BRAND_COLORS[b], 'small'),  new kakao.maps.Size(14, 18), { offset: new kakao.maps.Point(7, 18) });
       });
+      // level ≤ 6: large, 7-9: medium, ≥ 10: small
+      function sizeForLevel(lv) { return lv <= 6 ? 'large' : (lv <= 9 ? 'medium' : 'small'); }
+      var currentMarkerSize = sizeForLevel(mapObj.getLevel());
       var floatTip = document.getElementById('kakao-float-tooltip');
       allStores.forEach(function(store) {
         var pos = new kakao.maps.LatLng(store.lat, store.lng);
-        var img = markerImages[store.brand] || markerImages['일룸'];
+        var imgSet = markerImages[currentMarkerSize];
+        var img = imgSet[store.brand] || imgSet['일룸'];
         var zMap = {'일룸':10,'한샘':8,'리바트':6,'까사미아':4,'에몬스':2};
         var marker = new kakao.maps.Marker({ position: pos, map: mapObj, image: img, clickable: true, zIndex: zMap[store.brand]||1 });
         kakao.maps.event.addListener(marker, 'click', function() {
@@ -782,6 +791,18 @@ function tryKakao() {
         kakao.maps.event.addListener(marker, 'mouseout', function() { floatTip.style.display = 'none'; });
         store.marker = marker;
         store._pos = pos;
+      });
+      // 줌 레벨 변경 시 마커 크기 자동 조정
+      kakao.maps.event.addListener(mapObj, 'zoom_changed', function() {
+        var newSize = sizeForLevel(mapObj.getLevel());
+        if (newSize === currentMarkerSize) return;
+        currentMarkerSize = newSize;
+        var imgSet = markerImages[newSize];
+        allStores.forEach(function(s) {
+          if (s.marker && s.marker.setImage) {
+            s.marker.setImage(imgSet[s.brand] || imgSet['일룸']);
+          }
+        });
       });
       renderStoreList();
     });
