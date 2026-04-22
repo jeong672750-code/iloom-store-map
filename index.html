@@ -1469,7 +1469,7 @@ function showRegionDashboard(region) {
     var effRankBadge = '';
     if (perStore > 0 && effRank >= 0) {
       var rankColors = ['#fbbf24', '#e5e7eb', '#fb923c', '#94a3b8', '#94a3b8'];
-      effRankBadge = '<span style="display:inline-block;background:' + rankColors[effRank] + ';color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">효율 ' + (effRank + 1) + '위</span>';
+      effRankBadge = '<span onclick="event.stopPropagation();openEfficiencyDetail(\'' + b + '\',\'' + region + '\')" title="효율 계산 방식 보기" style="display:inline-block;background:' + rankColors[effRank] + ';color:#000;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;cursor:pointer;">효율 ' + (effRank + 1) + '위</span>';
     }
 
     html += '<div class="rd-card" style="border-left:4px solid ' + bc + ';cursor:pointer;" onclick="toggleBrandDetail(\'' + b + '\',\'' + region + '\')">' +
@@ -1509,10 +1509,18 @@ function showRegionDashboard(region) {
 
 function toggleBrandDetail(brand, region) {
   var area = document.getElementById('brandDetailArea');
-  if (area.dataset.brand === brand) { area.innerHTML = ''; area.dataset.brand = ''; return; }
+  if (area.dataset.brand === brand && area.dataset.tab !== 'efficiency') { area.innerHTML = ''; area.dataset.brand = ''; return; }
   area.dataset.brand = brand;
-  area.dataset.tab = area.dataset.tab || 'sales';
-  renderBrandDetail(brand, region, area.dataset.tab);
+  area.dataset.tab = 'sales';
+  renderBrandDetail(brand, region, 'sales');
+}
+
+function openEfficiencyDetail(brand, region) {
+  var area = document.getElementById('brandDetailArea');
+  if (area.dataset.brand === brand && area.dataset.tab === 'efficiency') { area.innerHTML = ''; area.dataset.brand = ''; return; }
+  area.dataset.brand = brand;
+  area.dataset.tab = 'efficiency';
+  renderBrandDetail(brand, region, 'efficiency');
 }
 
 function switchBrandTab(brand, region, tab) {
@@ -1527,7 +1535,7 @@ function renderBrandDetail(brand, region, tab) {
   var isAll = (region === '전체');
   tab = tab || 'sales';
   // 지역 필터링 중에는 매장 기준/변경 이력 탭 비활성 → 강제로 sales
-  if (!isAll && tab !== 'sales') tab = 'sales';
+  if (!isAll && (tab === 'criteria' || tab === 'history')) tab = 'sales';
 
   function tabBtn(name, label) {
     var active = tab === name;
@@ -1536,18 +1544,104 @@ function renderBrandDetail(brand, region, tab) {
   }
 
   var header = '<div style="margin-top:14px;padding:18px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;">' +
-    '<div style="display:flex;gap:6px;margin-bottom:14px;">' +
+    '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">' +
       tabBtn('sales', '매장별 매출') +
+      tabBtn('efficiency', '효율 분석') +
       (isAll ? tabBtn('criteria', '매장 기준') : '') +
       (isAll ? tabBtn('history', '변경 이력') : '') +
     '</div>';
 
   var body = '';
   if (tab === 'sales') body = renderBrandSalesTab(brand, region, bc);
+  else if (tab === 'efficiency') body = renderBrandEfficiencyTab(brand, region, bc);
   else if (tab === 'criteria') body = renderBrandCriteriaTab(brand, bc);
   else if (tab === 'history') body = renderBrandHistoryTab(brand, bc);
 
   area.innerHTML = header + body + '</div>';
+}
+
+function renderBrandEfficiencyTab(brand, region, bc) {
+  var isAll = (region === '전체');
+  var brands = ['일룸', '한샘', '리바트', '까사미아', '에몬스'];
+
+  var data = {};
+  brands.forEach(function(b) { data[b] = { count: 0, s25: 0 }; });
+  allStores.forEach(function(s) {
+    if (data[s.brand] === undefined) return;
+    if (!isAll && s.region !== region) return;
+    data[s.brand].count++;
+    var sales = findSalesData(s.brand, s.name);
+    if (sales && sales.s25 > 0) data[s.brand].s25 += sales.s25;
+  });
+
+  var perStoreSales = {};
+  brands.forEach(function(b) {
+    perStoreSales[b] = (data[b].count > 0 && data[b].s25 > 0) ? data[b].s25 / data[b].count : 0;
+  });
+  var ranking = brands.slice().filter(function(b) { return perStoreSales[b] > 0; })
+    .sort(function(a, b) { return perStoreSales[b] - perStoreSales[a]; });
+
+  var popTotal = 0;
+  if (typeof POPULATION_DATA !== 'undefined') {
+    if (isAll) {
+      Object.keys(POPULATION_DATA).forEach(function(r) { popTotal += POPULATION_DATA[r].pop; });
+    } else if (POPULATION_DATA[region]) {
+      popTotal = POPULATION_DATA[region].pop;
+    }
+  }
+
+  var regionLabel = isAll ? '전국' : region;
+  var formatPop = function(n) {
+    if (n >= 10000) return (n / 10000).toFixed(0) + '만';
+    return n.toLocaleString();
+  };
+
+  var html = '<div style="max-height:460px;overflow-y:auto;padding-right:4px;">';
+
+  // 계산 방식 설명
+  html += '<div style="font-size:14px;font-weight:700;color:' + bc + ';margin-bottom:10px;">📐 계산 방식</div>';
+  html += '<div style="padding:14px 16px;background:var(--surface);border-radius:8px;margin-bottom:16px;border:1px solid var(--border);">';
+  html += '<div style="margin-bottom:12px;">';
+  html += '<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">매장당 매출</div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:12px;color:#cbd5e1;padding:6px 10px;background:var(--surface2);border-radius:5px;display:inline-block;">브랜드 총 매출 ÷ 매장 수</div>';
+  html += '<div style="font-size:11px;color:#94a3b8;margin-top:5px;">매장 1곳이 평균적으로 만들어내는 매출</div>';
+  html += '</div>';
+  html += '<div>';
+  html += '<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">매장 1개 커버</div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:12px;color:#cbd5e1;padding:6px 10px;background:var(--surface2);border-radius:5px;display:inline-block;">' + regionLabel + ' 인구 ÷ 매장 수</div>';
+  html += '<div style="font-size:11px;color:#94a3b8;margin-top:5px;">매장 1곳이 담당하는 잠재 고객 규모 (값이 클수록 매장 대비 인구 밀도↑)</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // 효율 순위표
+  html += '<div style="font-size:14px;font-weight:700;color:' + bc + ';margin-bottom:10px;">🏆 ' + regionLabel + ' 지역 효율 순위</div>';
+  html += '<div style="background:var(--surface);border-radius:8px;overflow:hidden;border:1px solid var(--border);">';
+  html += '<div style="display:grid;grid-template-columns:50px 1fr 110px 110px;padding:10px 14px;background:var(--surface2);font-size:11px;color:#94a3b8;font-weight:600;">' +
+          '<span>순위</span><span>브랜드</span><span style="text-align:right;">매장당 매출</span><span style="text-align:right;">매장 1개 커버</span>' +
+          '</div>';
+
+  var medals = ['🥇', '🥈', '🥉', '4', '5'];
+  if (ranking.length === 0) {
+    html += '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;">해당 지역에 매출 데이터가 있는 브랜드가 없습니다.</div>';
+  } else {
+    ranking.forEach(function(b, idx) {
+      var bColor = BRAND_COLORS[b] || '#888';
+      var isSelected = b === brand;
+      var popPer = data[b].count > 0 && popTotal > 0 ? Math.round(popTotal / data[b].count) : 0;
+      html += '<div style="display:grid;grid-template-columns:50px 1fr 110px 110px;padding:12px 14px;border-top:1px solid var(--border);align-items:center;' +
+              (isSelected ? 'background:' + bColor + '1f;' : '') + '">';
+      html += '<span style="font-size:' + (idx < 3 ? '18px' : '14px') + ';font-weight:700;">' + medals[idx] + (idx >= 3 ? '위' : '') + '</span>';
+      html += '<span style="font-size:14px;font-weight:' + (isSelected ? '700' : '600') + ';color:' + bColor + ';">' + b + (isSelected ? ' ◀' : '') + ' <span style="font-size:11px;color:#94a3b8;font-weight:400;">(' + data[b].count + '개)</span></span>';
+      html += '<span style="font-size:14px;font-weight:700;text-align:right;color:#fff;font-family:DM Mono,monospace;">' + formatSales(perStoreSales[b]) + '</span>';
+      html += '<span style="font-size:14px;font-weight:700;text-align:right;color:#fff;font-family:DM Mono,monospace;">' + (popPer > 0 ? formatPop(popPer) + '<span style="color:#cbd5e1;font-weight:400;">명</span>' : '-') + '</span>';
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+  html += '<div style="font-size:11px;color:#6b7280;margin-top:8px;">* 매출 없는 브랜드는 순위 제외 · 인구 출처: 통계청 \'24년 주민등록인구</div>';
+
+  html += '</div>';
+  return html;
 }
 
 function renderBrandSalesTab(brand, region, bc) {
