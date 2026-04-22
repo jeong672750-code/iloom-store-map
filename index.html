@@ -480,12 +480,12 @@
     <!-- 성장률 범례 -->
     <div class="heatmap-legend" id="heatmapLegend">
       <div class="legend-title">지역별 매출 성장률 (25/24)</div>
-      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#047857;border-radius:3px;"></div> +10% 이상</div>
-      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#6ee7b7;border-radius:3px;"></div> +5% ~ +10%</div>
-      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#93c5fd;border-radius:3px;"></div> 0 ~ +5%</div>
-      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#fbbf24;border-radius:3px;"></div> -5% ~ 0%</div>
-      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#fca5a5;border-radius:3px;"></div> -10% ~ -5%</div>
-      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#dc2626;border-radius:3px;"></div> -10% 미만</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#15803d;border-radius:3px;"></div> +10% 이상</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#4ade80;border-radius:3px;"></div> +5% ~ +10%</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#60a5fa;border-radius:3px;"></div> 0 ~ +5%</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#eab308;border-radius:3px;"></div> -5% ~ 0%</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#f97316;border-radius:3px;"></div> -10% ~ -5%</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#b91c1c;border-radius:3px;"></div> -10% 미만</div>
       <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#4b5563;border-radius:3px;"></div> 데이터 없음</div>
     </div>
     <div class="info-panel" id="infoPanel">
@@ -1885,12 +1885,12 @@ function clearHeatmap() {
 
 function growthColor(pct, hasData) {
   if (!hasData) return '#4b5563';
-  if (pct >= 10) return '#047857';    // 진녹 (+10% 이상)
-  if (pct >= 5)  return '#6ee7b7';    // 연녹 (+5 ~ +10%)
-  if (pct >= 0)  return '#93c5fd';    // 연한 파랑 (0 ~ +5%)
-  if (pct >= -5) return '#fbbf24';    // 노랑 (-5 ~ 0%)
-  if (pct >= -10) return '#fca5a5';   // 연빨 (-10 ~ -5%)
-  return '#dc2626';                    // 진빨 (-10% 미만)
+  if (pct >= 10) return '#15803d';    // 진녹 (+10% 이상)
+  if (pct >= 5)  return '#4ade80';    // 연녹 (+5 ~ +10%)
+  if (pct >= 0)  return '#60a5fa';    // 파랑 (0 ~ +5%)
+  if (pct >= -5) return '#eab308';    // 진한 노랑 (-5 ~ 0%)
+  if (pct >= -10) return '#f97316';   // 주황 (-10 ~ -5%)
+  return '#b91c1c';                    // 진빨 (-10% 미만)
 }
 
 function drawHeatmap() {
@@ -1937,7 +1937,14 @@ function drawHeatmap() {
   }
 
   // 2) 각 시도 경계 폴리곤에 성장률 색상 칠하기 + 호버 이벤트
-  DISTRICT_BOUNDARIES.forEach(function(d) {
+  // 광역시(도 안에 포함되는 지역)를 마지막에 그려서 위로 올리기
+  var metroCities = { '서울':1, '부산':1, '대구':1, '인천':1, '광주':1, '대전':1, '울산':1, '세종':1 };
+  var sortedDistricts = DISTRICT_BOUNDARIES.slice().sort(function(a, b) {
+    var aIsMetro = metroCities[a.sido] ? 1 : 0;
+    var bIsMetro = metroCities[b.sido] ? 1 : 0;
+    return aIsMetro - bIsMetro; // 도 먼저, 광역시 나중
+  });
+  sortedDistricts.forEach(function(d) {
     var rs = regionSales[d.sido];
     var hasData = rs && rs.s24 > 0 && rs.s25 > 0;
     var pct = hasData ? ((rs.s25 - rs.s24) / rs.s24 * 100) : 0;
@@ -1947,15 +1954,19 @@ function drawHeatmap() {
     polys.forEach(function(poly) {
       var outer = poly[0];
       if (!outer || outer.length < 3) return;
+      var isMetro = !!metroCities[d.sido];
+      var baseFill = 0.6;
+      var hoverFill = 0.85;
       if (mapEngine === 'kakao' && mapObj) {
         var path = outer.map(function(c) { return new kakao.maps.LatLng(c[1], c[0]); });
         var polygon = new kakao.maps.Polygon({
           map: mapObj, path: path,
-          strokeWeight: 1, strokeColor: color, strokeOpacity: 0.6,
-          fillColor: color, fillOpacity: 0.28
+          strokeWeight: isMetro ? 2 : 1, strokeColor: color, strokeOpacity: 0.8,
+          fillColor: color, fillOpacity: baseFill,
+          zIndex: isMetro ? 20 : 10
         });
         kakao.maps.event.addListener(polygon, 'mouseover', function(ev) {
-          polygon.setOptions({ fillOpacity: 0.55 });
+          polygon.setOptions({ fillOpacity: hoverFill });
           tip.innerHTML = tipHtml;
           tip.style.display = 'block';
         });
@@ -1966,18 +1977,19 @@ function drawHeatmap() {
           tip.style.top = (pt.y + 14) + 'px';
         });
         kakao.maps.event.addListener(polygon, 'mouseout', function() {
-          polygon.setOptions({ fillOpacity: 0.28 });
+          polygon.setOptions({ fillOpacity: baseFill });
           tip.style.display = 'none';
         });
         heatmapCircles.push(polygon);
       } else if (mapEngine === 'leaflet' && mapObj) {
         var latlngs = outer.map(function(c) { return [c[1], c[0]]; });
         var polygon = L.polygon(latlngs, {
-          color: color, weight: 1, opacity: 0.6,
-          fillColor: color, fillOpacity: 0.28
+          color: color, weight: isMetro ? 2 : 1, opacity: 0.8,
+          fillColor: color, fillOpacity: baseFill
         }).addTo(mapObj);
+        if (isMetro && polygon.bringToFront) polygon.bringToFront();
         polygon.on('mouseover', function(ev) {
-          polygon.setStyle({ fillOpacity: 0.55 });
+          polygon.setStyle({ fillOpacity: hoverFill });
           tip.innerHTML = tipHtml;
           tip.style.display = 'block';
         });
@@ -1987,7 +1999,7 @@ function drawHeatmap() {
           tip.style.top = (pt.y + 14) + 'px';
         });
         polygon.on('mouseout', function() {
-          polygon.setStyle({ fillOpacity: 0.28 });
+          polygon.setStyle({ fillOpacity: baseFill });
           tip.style.display = 'none';
         });
         heatmapCircles.push(polygon);
