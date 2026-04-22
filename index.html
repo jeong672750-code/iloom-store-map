@@ -430,6 +430,10 @@
         </div>
       </div>
       <div id="gapSummary" style="margin-top:12px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;"></div>
+      <div style="margin-top:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:10px;color:#94a3b8;line-height:1.5;">
+        <strong style="color:#fbbf24;">출점 우선순위 점수</strong> = 커버리지 밖 경쟁사 수 × √(지역 인구/만명)<br>
+        경쟁사가 많고 인구가 많은 지역일수록 높은 점수
+      </div>
     </div>
     <div class="store-list" id="gapResults" style="font-size:12px;"></div>
   </div>
@@ -450,8 +454,8 @@
         비교
       </button>
       <button class="toolbar-btn" id="btnHeatmap" onclick="toggleHeatmap()">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-        히트맵
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 4 4 6-6"/></svg>
+        성장률
       </button>
       <button class="toolbar-btn" id="btnSales" onclick="toggleSalesDashboard()">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -473,13 +477,14 @@
       <button class="info-panel-close" onclick="closeCompare()">&#10005;</button>
       <div id="compareContent"></div>
     </div>
-    <!-- 히트맵 범례 -->
+    <!-- 성장률 범례 -->
     <div class="heatmap-legend" id="heatmapLegend">
-      <div class="legend-title">매출 히트맵</div>
-      <div class="legend-row"><div class="legend-circle" style="width:18px;height:18px;background:rgba(232,70,58,0.5);"></div> 상위 (20억+)</div>
-      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:rgba(232,70,58,0.3);"></div> 중상 (10~20억)</div>
-      <div class="legend-row"><div class="legend-circle" style="width:10px;height:10px;background:rgba(232,70,58,0.2);"></div> 중위 (5~10억)</div>
-      <div class="legend-row"><div class="legend-circle" style="width:8px;height:8px;background:rgba(232,70,58,0.1);"></div> 하위 (~5억)</div>
+      <div class="legend-title">지역별 매출 성장률 (25/24)</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#10b981;border-radius:3px;"></div> +10% 이상</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#6ee7b7;border-radius:3px;"></div> 0 ~ +10%</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#fca5a5;border-radius:3px;"></div> -10% ~ 0%</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#ef4444;border-radius:3px;"></div> -10% 미만</div>
+      <div class="legend-row"><div class="legend-circle" style="width:14px;height:14px;background:#4b5563;border-radius:3px;"></div> 데이터 없음</div>
     </div>
     <div class="info-panel" id="infoPanel">
       <button class="info-panel-close panel-close-below" onclick="closePanel()">&#10005;</button>
@@ -1864,7 +1869,7 @@ function updateRadius(val) {
 }
 
 // ══════════════════════════════════════════
-// 매출 히트맵
+// 지역별 매출 성장률 지도
 // ══════════════════════════════════════════
 function clearHeatmap() {
   heatmapCircles.forEach(function(c) {
@@ -1874,40 +1879,57 @@ function clearHeatmap() {
   heatmapCircles = [];
 }
 
+function growthColor(pct, hasData) {
+  if (!hasData) return '#4b5563';
+  if (pct >= 10) return '#10b981';
+  if (pct >= 0) return '#6ee7b7';
+  if (pct >= -10) return '#fca5a5';
+  return '#ef4444';
+}
+
 function drawHeatmap() {
-  var filtered = getFilteredStores();
-  filtered.forEach(function(store) {
-    var sales = findSalesData(store.brand, store.name);
-    if (!sales || !sales.s25 || sales.s25 <= 0) return;
+  if (typeof DISTRICT_BOUNDARIES === 'undefined') return;
 
-    var amt = sales.s25; // 백만원 단위
-    var radius, opacity;
-    if (amt >= 2000) { radius = 2800; opacity = 0.35; }       // 20억+
-    else if (amt >= 1000) { radius = 2200; opacity = 0.25; }  // 10~20억
-    else if (amt >= 500) { radius = 1600; opacity = 0.18; }   // 5~10억
-    else { radius = 1000; opacity = 0.12; }                   // ~5억
+  // 1) 지역별 24/25 매출 집계
+  var regionSales = {};
+  allStores.forEach(function(s) {
+    if (!activeBrands[s.brand]) return;
+    if (!s.region) return;
+    var sales = findSalesData(s.brand, s.name);
+    if (!sales) return;
+    if (!regionSales[s.region]) regionSales[s.region] = { s24: 0, s25: 0, count: 0 };
+    if (sales.s24 > 0) regionSales[s.region].s24 += sales.s24;
+    if (sales.s25 > 0) regionSales[s.region].s25 += sales.s25;
+    regionSales[s.region].count++;
+  });
 
-    var color = BRAND_COLORS[store.brand] || '#e8463a';
-
-    if (mapEngine === 'kakao' && mapObj) {
-      var circle = new kakao.maps.Circle({
-        center: new kakao.maps.LatLng(store.lat, store.lng),
-        radius: radius,
-        strokeWeight: 0,
-        fillColor: color,
-        fillOpacity: opacity,
-        map: mapObj
-      });
-      heatmapCircles.push(circle);
-    } else if (mapEngine === 'leaflet' && mapObj) {
-      var circle = L.circle([store.lat, store.lng], {
-        radius: radius,
-        stroke: false,
-        fillColor: color,
-        fillOpacity: opacity
-      }).addTo(mapObj);
-      heatmapCircles.push(circle);
-    }
+  // 2) 각 시도 경계 폴리곤에 성장률 색상 칠하기
+  DISTRICT_BOUNDARIES.forEach(function(d) {
+    var rs = regionSales[d.sido];
+    var hasData = rs && rs.s24 > 0 && rs.s25 > 0;
+    var pct = hasData ? ((rs.s25 - rs.s24) / rs.s24 * 100) : 0;
+    var color = growthColor(pct, hasData);
+    var polys = d.type === 'MultiPolygon' ? d.coords : [d.coords];
+    polys.forEach(function(poly) {
+      var outer = poly[0];
+      if (!outer || outer.length < 3) return;
+      if (mapEngine === 'kakao' && mapObj) {
+        var path = outer.map(function(c) { return new kakao.maps.LatLng(c[1], c[0]); });
+        var polygon = new kakao.maps.Polygon({
+          map: mapObj, path: path,
+          strokeWeight: 1, strokeColor: color, strokeOpacity: 0.6,
+          fillColor: color, fillOpacity: 0.28
+        });
+        heatmapCircles.push(polygon);
+      } else if (mapEngine === 'leaflet' && mapObj) {
+        var latlngs = outer.map(function(c) { return [c[1], c[0]]; });
+        var polygon = L.polygon(latlngs, {
+          color: color, weight: 1, opacity: 0.6,
+          fillColor: color, fillOpacity: 0.28
+        }).addTo(mapObj);
+        heatmapCircles.push(polygon);
+      }
+    });
   });
 }
 
@@ -2099,19 +2121,44 @@ function runCoverageAnalysis() {
   '</div>';
   document.getElementById('gapSummary').innerHTML = summaryHtml;
 
-  // 결과 리스트: 지역별 그룹
-  var html = '';
+  // 출점 우선순위 스코어 계산: 경쟁사 수 × √(지역 인구/만명)
+  //   - 경쟁사 많고 인구 많은 지역 = 시장 크고 경쟁만 존재하는 공백
+  //   - 제곱근으로 인구 격차(경기 1362만 vs 전남 181만) 완충
+  var regionScores = {};
   regionList.forEach(function(region) {
     var stores = regionMap[region];
+    var pop = (typeof POPULATION_DATA !== 'undefined' && POPULATION_DATA[region]) ? POPULATION_DATA[region].pop : 0;
+    var popMan = pop / 10000;
+    var score = stores.length * Math.sqrt(popMan);
+    regionScores[region] = { score: Math.round(score), pop: pop, popMan: popMan };
+  });
+  // 스코어 내림차순 재정렬
+  regionList.sort(function(a, b) { return regionScores[b].score - regionScores[a].score; });
+  var topScore = regionList.length > 0 ? regionScores[regionList[0]].score : 0;
+
+  // 결과 리스트: 지역별 그룹 (스코어 정렬)
+  var html = '';
+  regionList.forEach(function(region, idx) {
+    var stores = regionMap[region];
+    var scoreData = regionScores[region];
     var brandCount = {};
     stores.forEach(function(s) {
       brandCount[s.brand] = (brandCount[s.brand] || 0) + 1;
     });
+    var isTop3 = idx < 3 && scoreData.score > 0;
+    var rankBadge = isTop3
+      ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#fbbf24;color:#000;font-weight:700;margin-right:6px;">🔥 집중 후보 ' + (idx + 1) + '위</span>'
+      : '';
+    var popStr = scoreData.popMan >= 100 ? (scoreData.popMan / 100).toFixed(1) + '백만' : Math.round(scoreData.popMan) + '만';
 
     html += '<div style="padding:10px 16px;border-bottom:1px solid var(--border);">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
-        '<span style="font-weight:700;font-size:13px;">' + region + '</span>' +
+        '<span style="font-weight:700;font-size:13px;">' + rankBadge + region + '</span>' +
         '<span style="font-size:11px;color:#f87171;font-weight:600;">' + stores.length + '개 매장</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;">' +
+        '<span style="color:#cbd5e1;">인구 <strong style="color:#fff;font-family:DM Mono,monospace;">' + popStr + '</strong></span>' +
+        '<span style="color:#cbd5e1;">출점 우선순위 <strong style="color:#fbbf24;font-family:DM Mono,monospace;">' + scoreData.score + '점</strong></span>' +
       '</div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">' +
         Object.keys(brandCount).map(function(b) {
