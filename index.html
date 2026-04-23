@@ -1896,17 +1896,21 @@ function growthColor(pct, hasData) {
 function drawHeatmap() {
   if (typeof DISTRICT_BOUNDARIES === 'undefined') return;
 
-  // 1) 지역별 24/25 매출 집계
+  // 1) 지역별 24/25 매출 집계 (전체 + 브랜드별)
   var regionSales = {};
   allStores.forEach(function(s) {
     if (!activeBrands[s.brand]) return;
     if (!s.region) return;
     var sales = findSalesData(s.brand, s.name);
     if (!sales) return;
-    if (!regionSales[s.region]) regionSales[s.region] = { s24: 0, s25: 0, count: 0 };
-    if (sales.s24 > 0) regionSales[s.region].s24 += sales.s24;
-    if (sales.s25 > 0) regionSales[s.region].s25 += sales.s25;
-    regionSales[s.region].count++;
+    if (!regionSales[s.region]) regionSales[s.region] = { s24: 0, s25: 0, count: 0, byBrand: {} };
+    var r = regionSales[s.region];
+    if (sales.s24 > 0) r.s24 += sales.s24;
+    if (sales.s25 > 0) r.s25 += sales.s25;
+    r.count++;
+    if (!r.byBrand[s.brand]) r.byBrand[s.brand] = { s24: 0, s25: 0 };
+    if (sales.s24 > 0) r.byBrand[s.brand].s24 += sales.s24;
+    if (sales.s25 > 0) r.byBrand[s.brand].s25 += sales.s25;
   });
 
   // 호버 툴팁 생성 (지도 위에 띄움)
@@ -1918,13 +1922,36 @@ function drawHeatmap() {
     document.getElementById('map').appendChild(tip);
   }
 
+  var brandOrder = ['일룸', '한샘', '리바트', '까사미아', '에몬스'];
   function buildTipHtml(regionName, rs, hasData, pct) {
     var pctStr = hasData ? (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%' : '데이터 없음';
     var pctColor = !hasData ? '#9ca3af' : (pct >= 0 ? '#34d399' : '#f87171');
     var html = '<div style="font-weight:700;font-size:13px;margin-bottom:4px;">' + regionName + '</div>';
-    html += '<div>성장률 <strong style="color:' + pctColor + ';font-family:DM Mono,monospace;">' + pctStr + '</strong></div>';
+    html += '<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;">' +
+      '<span style="color:#cbd5e1;font-size:11px;">전체</span>' +
+      '<strong style="color:' + pctColor + ';font-family:DM Mono,monospace;">' + pctStr + '</strong>' +
+    '</div>';
     if (hasData) {
-      html += '<div style="color:#cbd5e1;font-size:11px;margin-top:3px;">24년 ' + formatSales(rs.s24) + ' → 25년 ' + formatSales(rs.s25) + '</div>';
+      html += '<div style="color:#94a3b8;font-size:10px;margin-top:2px;">24년 ' + formatSales(rs.s24) + ' → 25년 ' + formatSales(rs.s25) + '</div>';
+      // 브랜드별 분해
+      var brandRows = '';
+      brandOrder.forEach(function(b) {
+        if (!activeBrands[b]) return;
+        var bd = rs.byBrand && rs.byBrand[b];
+        if (!bd) return;
+        var bHasData = bd.s24 > 0 && bd.s25 > 0;
+        var bPct = bHasData ? ((bd.s25 - bd.s24) / bd.s24 * 100) : null;
+        var bPctStr = bHasData ? (bPct >= 0 ? '+' : '') + bPct.toFixed(1) + '%' : '-';
+        var bPctColor = !bHasData ? '#9ca3af' : (bPct >= 0 ? '#34d399' : '#f87171');
+        var bColor = BRAND_COLORS[b] || '#888';
+        brandRows += '<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;font-size:11px;margin-top:3px;">' +
+          '<span style="color:' + bColor + ';font-weight:600;">' + b + '</span>' +
+          '<span style="color:' + bPctColor + ';font-family:DM Mono,monospace;font-weight:600;">' + bPctStr + '</span>' +
+        '</div>';
+      });
+      if (brandRows) {
+        html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid #4b5563;">' + brandRows + '</div>';
+      }
     }
     return html;
   }
