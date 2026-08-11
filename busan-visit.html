@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부산사업소 대리점 방문 동선 · 2026.09.03~04</title>
+
+<!-- 카카오맵 (기본) -->
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=625310b264d6d44999e623855ae46f03&libraries=services&autoload=false"></script>
+<!-- Leaflet (카카오 로드 실패 시 폴백) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  :root {
+    --red: #c80a1e;
+    --blue: #1a5fb4;
+    --text: #333333;
+    --muted: #777777;
+    --bg: #ffffff;
+    --bg2: #f8f8f8;
+    --border: #e2e2e2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: "Noto Sans KR", "Malgun Gothic", sans-serif;
+    color: var(--text); background: var(--bg2);
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+
+  header {
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 14px 20px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: -0.3px; }
+  header .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  #engineBadge {
+    font-size: 10.5px; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; margin-left: 8px;
+    vertical-align: 2px;
+  }
+  .tabs { display: flex; gap: 6px; margin-left: auto; }
+  .tabs button {
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+    transition: all .15s;
+  }
+  .tabs button:hover { background: var(--bg2); }
+  .tabs button.on { background: var(--text); border-color: var(--text); color: #fff; }
+  .tabs button.on.d1 { background: var(--red); border-color: var(--red); }
+  .tabs button.on.d2 { background: var(--blue); border-color: var(--blue); }
+
+  .wrap { flex: 1; display: flex; min-height: 0; }
+  #map { flex: 1; min-width: 0; background: #eaeaea; }
+
+  aside { width: 372px; flex-shrink: 0; background: var(--bg); border-left: 1px solid var(--border); overflow-y: auto; }
+  .day { border-bottom: 1px solid var(--border); }
+  .day-head {
+    padding: 12px 18px 10px; display: flex; align-items: baseline; gap: 8px;
+    position: sticky; top: 0; background: var(--bg); z-index: 5; border-bottom: 1px solid var(--border);
+  }
+  .day-head .bar { width: 4px; height: 15px; border-radius: 2px; }
+  .day-head .t { font-size: 14px; font-weight: 700; }
+  .day-head .m { font-size: 11.5px; color: var(--muted); margin-left: auto; }
+  .d1 .bar { background: var(--red); }
+  .d2 .bar { background: var(--blue); }
+
+  .row { display: flex; gap: 11px; padding: 10px 18px; cursor: pointer; border-bottom: 1px solid #f2f2f2; transition: background .12s; }
+  .row:hover { background: var(--bg2); }
+  .row.node { cursor: default; }
+  .row.node:hover { background: transparent; }
+  .num {
+    width: 23px; height: 23px; border-radius: 50%; flex-shrink: 0; color: #fff;
+    font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+  .d1 .num { background: var(--red); }
+  .d2 .num { background: var(--blue); }
+  .num.mark { background: #999 !important; font-size: 12px; }
+  .info { min-width: 0; flex: 1; }
+  .info .n { font-size: 13.5px; font-weight: 600; }
+  .info .n span { font-weight: 400; color: var(--muted); font-size: 11.5px; margin-left: 5px; }
+  .info .a { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .time { font-size: 12px; font-weight: 600; text-align: right; flex-shrink: 0; margin-top: 2px; white-space: nowrap; }
+  .leg { font-size: 11px; color: var(--muted); padding: 5px 18px 5px 52px; background: var(--bg2); border-bottom: 1px solid #f2f2f2; }
+  .leg b { font-weight: 600; color: #555; }
+
+  .note { padding: 13px 18px; font-size: 11.5px; color: var(--muted); line-height: 1.65; }
+  .note b { color: var(--red); font-weight: 600; }
+
+  /* 지도 위 마커·라벨·팝업 (두 엔진 공용) */
+  .pin {
+    border-radius: 50%; color: #fff; font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2.5px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,.4); cursor: pointer;
+  }
+  .leg-label {
+    background: rgba(255,255,255,.93); border: 1px solid var(--border); border-radius: 4px;
+    padding: 2px 6px; font-size: 10.5px; font-weight: 600; color: #555;
+    white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  }
+  .leaflet-tooltip.leg-label:before { display: none; }
+  .leaflet-control-attribution { font-size: 9px; }
+
+  .pop {
+    background: #fff; border-radius: 8px; box-shadow: 0 3px 14px rgba(0,0,0,.22);
+    padding: 12px 34px 12px 14px; min-width: 190px; position: relative;
+  }
+  .pop-n { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .pop-t { font-size: 12px; font-weight: 600; margin-bottom: 5px; }
+  .pop-a { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+  .pop-l { display: inline-block; margin-top: 8px; font-size: 11.5px; font-weight: 600; text-decoration: none; }
+  .pop-x {
+    position: absolute; top: 6px; right: 8px; cursor: pointer;
+    font-size: 15px; color: #bbb; line-height: 1; padding: 2px 4px;
+  }
+  .pop-x:hover { color: var(--text); }
+  .leaflet-popup-content { margin: 12px 14px; font-family: inherit; }
+  .leaflet-popup-content .pop { box-shadow: none; padding: 0; min-width: 0; }
+  .leaflet-popup-content .pop-x { display: none; }
+
+  @media (max-width: 900px) {
+    .wrap { flex-direction: column; }
+    #map { height: 52vh; flex: none; }
+    aside { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+  }
+
+  /* 휴대폰 — 패널 내부 스크롤을 풀고 페이지 전체가 하나로 스크롤되게 */
+  @media (max-width: 560px) {
+    html, body { height: auto; }
+    body { overflow: visible; -webkit-text-size-adjust: 100%; }
+    header { padding: 11px 14px; gap: 10px; }
+    header h1 { font-size: 15px; }
+    header .sub { font-size: 11px; line-height: 1.45; }
+    #engineBadge { font-size: 10px; padding: 1px 5px; }
+    .tabs { margin-left: 0; width: 100%; }
+    .tabs button { flex: 1; padding: 9px 4px; font-size: 12px; }
+    .wrap { flex: none; }
+    #map { height: 46vh; }
+    aside { overflow: visible; }
+    .day-head { position: static; }
+    .row { padding: 11px 14px; }
+    .leg { padding: 5px 14px 5px 48px; }
+    .note { padding: 13px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>부산사업소 대리점 방문 동선<span id="engineBadge">지도 로딩…</span></h1>
+    <div class="sub">2026.09.03(목) ~ 09.04(금) · 9개점 · KTX + 쏘카(부산역 픽업/반납) · 총 주행 약 408km</div>
+  </div>
+  <div class="tabs">
+    <button data-day="0" class="on">전체</button>
+    <button data-day="1" class="d1">1일차 · 서부 5</button>
+    <button data-day="2" class="d2">2일차 · 동부 4</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="map"></div>
+  <aside id="panel"></aside>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   일정 데이터
+   매장 좌표·주소 출처: 유통망 지도(iloom_store_map.html) 매장 데이터
+   ══════════════════════════════════════════════════════════ */
+const BUSAN_STN = { lat: 35.1151, lng: 129.0403 };
+
+const PLAN = [
+  {
+    day: 1, label: "1일차 · 09/03(목) 서부 축", meta: "주행 약 220km",
+    items: [
+      { type:"node", name:"부산역", note:"쏘카 픽업", time:"08:30–08:45",
+        lat:BUSAN_STN.lat, lng:BUSAN_STN.lng, icon:"출" },
+      { leg:"부산역 → 진주 · 1시간 35분 / 110km (남해고속)" },
+      { type:"store", no:1, name:"진주점", addr:"경남 진주시 진주대로 638",
+        time:"10:30–11:20", lat:35.1635500873517, lng:128.106507113436 },
+      { leg:"진주 → 마산 · 55분 / 52km · 도착 후 점심 12:15–13:00" },
+      { type:"store", no:2, name:"마산점", addr:"경남 창원시 마산합포구 북성로 34",
+        time:"13:00–13:50", lat:35.2103995807488, lng:128.572657608978 },
+      { leg:"마산 → 창원 · 20분 / 8km (창원대로)" },
+      { type:"store", no:3, name:"창원점", addr:"경남 창원시 의창구 창원대로 360",
+        time:"14:10–15:00", lat:35.2359037570239, lng:128.637502814247 },
+      { leg:"창원 → 김해 · 40분 / 27km" },
+      { type:"store", no:4, name:"김해점", addr:"경남 김해시 금관대로 1053",
+        time:"15:40–16:30", lat:35.2222220276392, lng:128.848006055546 },
+      { leg:"김해 → 하단 · 40분 / 22km" },
+      { type:"store", no:5, name:"하단점", addr:"부산 사하구 낙동남로 1359",
+        time:"17:10–18:00", lat:35.1065406343053, lng:128.960424544551 },
+      { leg:"하단 → 숙소 · 30분 (서면~부산시청권 권장)" },
+      { type:"node", name:"숙소권", note:"서면·부산시청 일대", time:"18:30~",
+        lat:35.1579, lng:129.0594, icon:"숙" }
+    ]
+  },
+  {
+    day: 2, label: "2일차 · 09/04(금) 동부 축", meta: "주행 약 188km",
+    items: [
+      { leg:"숙소 → 울산 · 1시간 10분 / 65km (08:30 출발, 출근정체 반영)" },
+      { type:"store", no:6, name:"울산점", addr:"울산 남구 삼산로 361",
+        time:"10:00–11:00", note:"조기 미팅 협의", lat:35.5401490138604, lng:129.346536045624 },
+      { leg:"울산 → 롯데동부산 · 45분 / 45km (동해고속)" },
+      { type:"store", no:7, name:"롯데동부산", addr:"부산 기장군 동부산관광로 8",
+        time:"11:45–12:40", note:"이후 아울렛 식당가 점심", lat:35.1928254119026, lng:129.214956053184 },
+      { leg:"롯데동부산 → 양산 · 45분 / 45km (부산외곽순환) · 출발 전 점심 12:40–13:15" },
+      { type:"store", no:8, name:"양산점", addr:"경남 양산시 물금읍 황산로 497",
+        time:"14:00–14:55", lat:35.3188297700752, lng:128.994064345878 },
+      { leg:"양산 → 연제 · 40분 / 25km (경부고속·만덕터널)" },
+      { type:"store", no:9, name:"연제점", addr:"부산 연제구 거제동 46-2",
+        time:"15:35–16:30", lat:35.1927407180549, lng:129.078287223612 },
+      { leg:"연제 → 부산역 · 20분 / 8km" },
+      { type:"node", name:"부산역", note:"쏘카 반납 → KTX 4050 (17:28 → 수서 19:58)", time:"16:50–17:00",
+        lat:BUSAN_STN.lat, lng:BUSAN_STN.lng, icon:"착" }
+    ]
+  }
+];
+
+const COLOR = { 1: "#c80a1e", 2: "#1a5fb4" };
+/* [남서, 북동] */
+const BOUNDS = {
+  0: [[35.05, 128.03], [35.60, 129.42]],
+  1: [[35.06, 128.06], [35.28, 129.08]],
+  2: [[35.09, 128.96], [35.58, 129.38]]
+};
+
+/* 구간 설명에서 지도 라벨용 요약만 추출: "A → B · 40분 / 25km (경유)" → "40분 / 25km" */
+function legSummary(text) {
+  const seg = text.split("·")[1];
+  return seg ? seg.split("(")[0].trim() : "";
+}
+
+/* 일정 항목을 지점(points) / 구간라벨(labels)로 전개 */
+const DAYS = PLAN.map(d => {
+  const points = [], labels = [];
+  let pendingLeg = null;
+  d.items.forEach((it, i) => {
+    if (it.leg) { pendingLeg = it.leg; return; }
+    if (points.length && pendingLeg) {
+      const prev = points[points.length - 1];
+      const text = legSummary(pendingLeg);
+      if (text) labels.push({ lat: (prev.lat + it.lat) / 2, lng: (prev.lng + it.lng) / 2, text });
+    }
+    pendingLeg = null;
+    points.push(Object.assign({ key: `${d.day}-${i}` }, it));
+  });
+  return { day: d.day, points, labels };
+});
+
+function pinHTML(p, color) {
+  const isStore = p.type === "store";
+  const size = isStore ? 30 : 26;
+  const label = isStore ? p.no : p.icon;
+  return `<div class="pin" data-key="${p.key}" style="background:${isStore ? color : "#999"};`
+       + `width:${size}px;height:${size}px;line-height:1;font-size:${isStore ? 12 : 11.5}px">${label}</div>`;
+}
+
+function popHTML(p, color, withClose) {
+  const isStore = p.type === "store";
+  const nav = `https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`;
+  return `<div class="pop">`
+    + (withClose ? `<div class="pop-x" data-pop-close="1">&times;</div>` : ``)
+    + `<div class="pop-n">${isStore ? p.no + ". " : ""}${p.name}</div>`
+    + `<div class="pop-t" style="color:${color}">${p.time}${p.note ? " · " + p.note : ""}</div>`
+    + (p.addr ? `<div class="pop-a">${p.addr}</div>` : ``)
+    + `<a class="pop-l" style="color:${color}" href="${nav}" target="_blank" rel="noopener">카카오맵 길찾기 →</a>`
+    + `</div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   지도 엔진 — 카카오 우선, 실패 시 Leaflet
+   두 엔진 모두 아래 인터페이스를 채운다:
+     ENGINE.showDay(day, bool) / ENGINE.fit(bounds) / ENGINE.focus(key)
+   ══════════════════════════════════════════════════════════ */
+let ENGINE = null;
+
+function initKakao() {
+  return new Promise((resolve, reject) => {
+    if (typeof kakao === "undefined" || !kakao.maps) return reject("SDK 없음");
+    /* appkey 도메인 불일치 등으로 load 콜백이 오지 않는 경우 대비 */
+    const timer = setTimeout(() => reject("타임아웃"), 4000);
+    try {
+      kakao.maps.load(() => {
+        clearTimeout(timer);
+        const map = new kakao.maps.Map(document.getElementById("map"), {
+          center: new kakao.maps.LatLng(35.32, 128.72), level: 10
+        });
+        map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+
+        const groups = {}, pins = {};
+        const popup = new kakao.maps.CustomOverlay({ yAnchor: 1.18, xAnchor: 0.5, zIndex: 9000 });
+
+        DAYS.forEach(d => {
+          const color = COLOR[d.day];
+          const objs = [];
+
+          objs.push(new kakao.maps.Polyline({
+            path: d.points.map(p => new kakao.maps.LatLng(p.lat, p.lng)),
+            strokeWeight: 4, strokeColor: color, strokeOpacity: 0.62, strokeStyle: "shortdash"
+          }));
+
+          d.labels.forEach(l => objs.push(new kakao.maps.CustomOverlay({
+            position: new kakao.maps.LatLng(l.lat, l.lng),
+            content: `<div class="leg-label">${l.text}</div>`,
+            yAnchor: 0.5, xAnchor: 0.5, zIndex: 100
+          })));
+
+          d.points.forEach(p => {
+            const ov = new kakao.maps.CustomOverlay({
+              position: new kakao.maps.LatLng(p.lat, p.lng),
+              content: pinHTML(p, color),
+              yAnchor: 0.5, xAnchor: 0.5,
+              zIndex: p.type === "store" ? 500 : 200
+            });
+            objs.push(ov);
+            pins[p.key] = p;
+          });
+
+          groups[d.day] = objs;
+          objs.forEach(o => o.setMap(map));
+        });
+
+        /* 마커 클릭 — CustomOverlay 콘텐츠는 일반 DOM이라 위임으로 처리 */
+        document.getElementById("map").addEventListener("click", e => {
+          if (e.target.closest("[data-pop-close]")) { popup.setMap(null); return; }
+          const pin = e.target.closest(".pin[data-key]");
+          if (!pin) return;
+          openPopup(pin.dataset.key);
+        });
+
+        function openPopup(key) {
+          const p = pins[key];
+          if (!p) return;
+          popup.setContent(popHTML(p, COLOR[+key.split("-")[0]], true));
+          popup.setPosition(new kakao.maps.LatLng(p.lat, p.lng));
+          popup.setMap(map);
+        }
+
+        ENGINE = {
+          name: "Kakao Maps",
+          showDay(day, show) { groups[day].forEach(o => o.setMap(show ? map : null)); if (!show) popup.setMap(null); },
+          fit(b) {
+            map.setBounds(new kakao.maps.LatLngBounds(
+              new kakao.maps.LatLng(b[0][0], b[0][1]),
+              new kakao.maps.LatLng(b[1][0], b[1][1])
+            ), 30, 30, 30, 30);
+          },
+          focus(key) {
+            const p = pins[key]; if (!p) return;
+            map.setLevel(5, { anchor: new kakao.maps.LatLng(p.lat, p.lng) });
+            map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+            openPopup(key);
+          }
+        };
+        resolve();
+      });
+    } catch (e) { clearTimeout(timer); reject(e); }
+  });
+}
+
+function initLeaflet() {
+  const map = L.map("map").setView([35.32, 128.72], 9);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    maxZoom: 19, attribution: "&copy; OpenStreetMap &copy; CARTO"
+  }).addTo(map);
+
+  const groups = {}, pins = {};
+  DAYS.forEach(d => {
+    const color = COLOR[d.day];
+    const g = L.layerGroup().addTo(map);
+
+    L.polyline(d.points.map(p => [p.lat, p.lng]), {
+      color, weight: 3, opacity: 0.62, dashArray: "7,6", lineCap: "round"
+    }).addTo(g);
+
+    d.labels.forEach(l => L.tooltip({ permanent: true, direction: "center", className: "leg-label" })
+      .setLatLng([l.lat, l.lng]).setContent(l.text).addTo(g));
+
+    d.points.forEach(p => {
+      const size = p.type === "store" ? 30 : 26;
+      const m = L.marker([p.lat, p.lng], {
+        icon: L.divIcon({ className: "", html: pinHTML(p, color), iconSize: [size, size], iconAnchor: [size / 2, size / 2], popupAnchor: [0, -size / 2] }),
+        zIndexOffset: p.type === "store" ? 500 : 0
+      }).bindPopup(popHTML(p, color, false)).addTo(g);
+      pins[p.key] = m;
+    });
+    groups[d.day] = g;
+  });
+
+  ENGINE = {
+    name: "OpenStreetMap (카카오 로드 실패)",
+    showDay(day, show) { show ? map.addLayer(groups[day]) : map.removeLayer(groups[day]); },
+    fit(b) { map.fitBounds(b, { padding: [30, 30] }); },
+    focus(key) { const m = pins[key]; if (!m) return; map.flyTo(m.getLatLng(), 12, { duration: 0.6 }); m.openPopup(); }
+  };
+}
+
+/* ══════════════════════════════════════════════════════════
+   사이드 패널
+   ══════════════════════════════════════════════════════════ */
+const panel = document.getElementById("panel");
+panel.innerHTML = PLAN.map(d => {
+  let idx = -1;
+  return `
+  <section class="day d${d.day}" data-day="${d.day}">
+    <div class="day-head d${d.day}">
+      <div class="bar"></div><div class="t">${d.label}</div><div class="m">${d.meta}</div>
+    </div>
+    ${d.items.map((it, i) => it.leg
+      ? `<div class="leg"><b>↓</b> ${it.leg}</div>`
+      : `<div class="row ${it.type === "node" ? "node" : ""}" data-key="${d.day}-${i}">
+           <div class="num ${it.type === "node" ? "mark" : ""}">${it.type === "store" ? it.no : it.icon}</div>
+           <div class="info">
+             <div class="n">${it.name}${it.note ? `<span>${it.note}</span>` : ""}</div>
+             ${it.addr ? `<div class="a">${it.addr}</div>` : ""}
+           </div>
+           <div class="time">${it.time}</div>
+         </div>`
+    ).join("")}
+  </section>`;
+}).join("") + `
+  <div class="note">
+    <b>2일차 전제</b> — 08:30 숙소 출발 + <b>울산점 10:00 조기 미팅 협의</b>.
+    울산점이 10:30 오픈 정각을 고수하면 전체가 30분 밀려 미팅을 50분씩으로 줄여야 하고 버퍼도 18분으로 축소됩니다.<br><br>
+    <b>연제점 마지막 배치</b> — 부산역에서 20분 거리라 열차 직전 구간이 가장 짧습니다.
+    지연 시 연제 미팅만 줄여 회복할 수 있는 구조입니다.<br><br>
+    <b>상행 제약</b> — 18시 이후 전편 매진. 17:28(4050)이 사실상 마지막 확정편이라 지연 시 대체편이 없습니다.<br><br>
+    <b>백업</b> — 크게 밀리면 롯데동부산을 1일차 야간(19:00–19:30, 아울렛 21시 영업)으로 당기고 2일차를 3개점으로 축소<br><br>
+    선은 직선이며 실제 도로 경로가 아닙니다. 시간·거리는 카카오내비 기준 추정치입니다.
+  </div>`;
+
+panel.addEventListener("click", e => {
+  const row = e.target.closest(".row");
+  if (row && ENGINE) ENGINE.focus(row.dataset.key);
+});
+
+document.querySelectorAll(".tabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (!ENGINE) return;
+    const day = +btn.dataset.day;
+    document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("on"));
+    btn.classList.add("on");
+    [1, 2].forEach(d => {
+      const show = day === 0 || day === d;
+      ENGINE.showDay(d, show);
+      const sec = panel.querySelector(`section[data-day="${d}"]`);
+      if (sec) sec.style.display = show ? "" : "none";
+    });
+    ENGINE.fit(BOUNDS[day]);
+  });
+});
+
+/* 부팅 */
+initKakao()
+  .catch(reason => { console.warn("카카오맵 로드 실패 → Leaflet 폴백:", reason); initLeaflet(); })
+  .finally(() => {
+    document.getElementById("engineBadge").textContent = ENGINE ? ENGINE.name : "지도 로드 실패";
+    if (ENGINE) ENGINE.fit(BOUNDS[0]);
+  });
+</script>
+</body>
+</html>
