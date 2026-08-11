@@ -101,6 +101,9 @@
     white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.12);
   }
   .leaflet-tooltip.leg-label:before { display: none; }
+  /* 인접 구간 라벨끼리 겹치지 않도록 위·아래로 엇갈리게 */
+  .leg-label.lbl-up { margin-top: -15px; }
+  .leg-label.lbl-down { margin-top: 15px; }
   .leaflet-control-attribution { font-size: 9px; }
 
   .pop {
@@ -291,7 +294,7 @@ function initKakao() {
         });
         map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
 
-        const groups = {}, pins = {};
+        const groups = {}, labelObjs = {}, pins = {};
         const popup = new kakao.maps.CustomOverlay({ yAnchor: 1.18, xAnchor: 0.5, zIndex: 9000 });
 
         DAYS.forEach(d => {
@@ -303,11 +306,11 @@ function initKakao() {
             strokeWeight: 4, strokeColor: color, strokeOpacity: 0.62, strokeStyle: "shortdash"
           }));
 
-          d.labels.forEach(l => objs.push(new kakao.maps.CustomOverlay({
+          labelObjs[d.day] = d.labels.map((l, i) => new kakao.maps.CustomOverlay({
             position: new kakao.maps.LatLng(l.lat, l.lng),
-            content: `<div class="leg-label">${l.text}</div>`,
+            content: `<div class="leg-label ${i % 2 ? "lbl-down" : "lbl-up"}">${l.text}</div>`,
             yAnchor: 0.5, xAnchor: 0.5, zIndex: 100
-          })));
+          }));
 
           d.points.forEach(p => {
             const ov = new kakao.maps.CustomOverlay({
@@ -343,6 +346,7 @@ function initKakao() {
         ENGINE = {
           name: "Kakao Maps",
           showDay(day, show) { groups[day].forEach(o => o.setMap(show ? map : null)); if (!show) popup.setMap(null); },
+          showLabels(day, show) { labelObjs[day].forEach(o => o.setMap(show ? map : null)); },
           fit(b) {
             map.setBounds(new kakao.maps.LatLngBounds(
               new kakao.maps.LatLng(b[0][0], b[0][1]),
@@ -364,21 +368,25 @@ function initKakao() {
 
 function initLeaflet() {
   const map = L.map("map").setView([35.32, 128.72], 9);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-    maxZoom: 19, attribution: "&copy; OpenStreetMap &copy; CARTO"
+  /* OSM 표준 타일 — 지명이 현지 언어(한글)로 표기된다. CARTO는 영문이라 사용하지 않음 */
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: "&copy; OpenStreetMap"
   }).addTo(map);
 
-  const groups = {}, pins = {};
+  const groups = {}, labelGroups = {}, pins = {};
   DAYS.forEach(d => {
     const color = COLOR[d.day];
     const g = L.layerGroup().addTo(map);
+    const lg = L.layerGroup().addTo(map);
 
     L.polyline(d.points.map(p => [p.lat, p.lng]), {
       color, weight: 3, opacity: 0.62, dashArray: "7,6", lineCap: "round"
     }).addTo(g);
 
-    d.labels.forEach(l => L.tooltip({ permanent: true, direction: "center", className: "leg-label" })
-      .setLatLng([l.lat, l.lng]).setContent(l.text).addTo(g));
+    d.labels.forEach((l, i) => L.tooltip({
+      permanent: true, direction: "center",
+      className: `leg-label ${i % 2 ? "lbl-down" : "lbl-up"}`
+    }).setLatLng([l.lat, l.lng]).setContent(l.text).addTo(lg));
 
     d.points.forEach(p => {
       const size = p.type === "store" ? 30 : 26;
@@ -389,11 +397,13 @@ function initLeaflet() {
       pins[p.key] = m;
     });
     groups[d.day] = g;
+    labelGroups[d.day] = lg;
   });
 
   ENGINE = {
-    name: "OpenStreetMap (카카오 로드 실패)",
+    name: "OpenStreetMap",
     showDay(day, show) { show ? map.addLayer(groups[day]) : map.removeLayer(groups[day]); },
+    showLabels(day, show) { show ? map.addLayer(labelGroups[day]) : map.removeLayer(labelGroups[day]); },
     fit(b) { map.fitBounds(b, { padding: [30, 30] }); },
     focus(key) { const m = pins[key]; if (!m) return; map.flyTo(m.getLatLng(), 12, { duration: 0.6 }); m.openPopup(); }
   };
@@ -447,6 +457,8 @@ document.querySelectorAll(".tabs button").forEach(btn => {
     [1, 2].forEach(d => {
       const show = day === 0 || day === d;
       ENGINE.showDay(d, show);
+      /* 구간 소요시간 라벨은 단일 일차 보기에서만 — 전체 보기에서는 부산권에서 마커와 겹친다 */
+      ENGINE.showLabels(d, show && day !== 0);
       const sec = panel.querySelector(`section[data-day="${d}"]`);
       if (sec) sec.style.display = show ? "" : "none";
     });
@@ -454,12 +466,17 @@ document.querySelectorAll(".tabs button").forEach(btn => {
   });
 });
 
-/* 부팅 */
-initKakao()
-  .catch(reason => { console.warn("카카오맵 로드 실패 → Leaflet 폴백:", reason); initLeaflet(); })
+/* 부팅
+   카카오맵 앱키는 등록된 도메인에서만 인증되므로 file:// 로 직접 열면 어차피 실패한다.
+   그 경우 4초 타임아웃을 기다리지 않고 곧바로 Leaflet으로 간다 (파일 첨부로 받은 사람 배려). */
+const KAKAO_OK = location.protocol === "http:" || location.protocol === "https:";
+(KAKAO_OK ? initKakao() : Promise.reject("file:// — 등록 도메인이 아니라 카카오맵 생략"))
+  .catch(reason => { console.warn("Leaflet 폴백:", reason); initLeaflet(); })
   .finally(() => {
     document.getElementById("engineBadge").textContent = ENGINE ? ENGINE.name : "지도 로드 실패";
-    if (ENGINE) ENGINE.fit(BOUNDS[0]);
+    if (!ENGINE) return;
+    [1, 2].forEach(d => ENGINE.showLabels(d, false));   // 기본은 전체 보기 → 라벨 숨김
+    ENGINE.fit(BOUNDS[0]);
   });
 </script>
 </body>
